@@ -49,7 +49,11 @@ def save_results(results, target, output_dir):
             f.write("🌐 【ネットワーク情報】\n")
             f.write("=" * 50 + "\n")
             
-            if 'ip' in network_data:
+            # エラー情報の表示
+            if 'error' in network_data:
+                f.write(f"❌ エラー: {network_data['error']}\n\n")
+            
+            if 'ip' in network_data and network_data['ip']:
                 f.write(f"📍 IPアドレス: {network_data['ip']}\n")
             
             if 'open_ports' in network_data and network_data['open_ports']:
@@ -220,36 +224,88 @@ def network_reconnaissance(target, output_dir):
     print(f"\n🔍 ネットワーク偵察を開始しています...")
     print(f"🎯 ターゲット: {target}")
     
-    scanner = NetworkScanner(target)
-    results = scanner.run_full_network_scan()
-    
-    report_file = save_results(results, target, output_dir)
-    print(f"📄 レポートファイル: {report_file}")
-    return results
+    try:
+        scanner = NetworkScanner(target)
+        results = scanner.run_full_network_scan()
+        
+        report_file = save_results(results, target, output_dir)
+        print(f"📄 レポートファイル: {report_file}")
+        return results
+    except Exception as e:
+        print(f"❌ ネットワーク偵察でエラーが発生しました: {str(e)}")
+        # エラーが発生しても空の結果を返す
+        error_results = {
+            'target': target,
+            'ip': None,
+            'open_ports': [],
+            'services': {},
+            'os_info': {},
+            'error': str(e)
+        }
+        report_file = save_results(error_results, target, output_dir)
+        print(f"📄 エラーレポートファイル: {report_file}")
+        return error_results
 
 def web_reconnaissance(target, output_dir):
     """Webアプリケーション偵察を実行"""
     print(f"\n🌐 Webアプリケーション偵察を開始しています...")
     print(f"🎯 ターゲット: {target}")
     
-    scanner = WebScanner(target)
-    results = scanner.run_full_web_scan()
-    
-    report_file = save_results(results, target, output_dir)
-    print(f"📄 レポートファイル: {report_file}")
-    return results
+    try:
+        scanner = WebScanner(target)
+        results = scanner.run_full_web_scan()
+        
+        report_file = save_results(results, target, output_dir)
+        print(f"📄 レポートファイル: {report_file}")
+        return results
+    except Exception as e:
+        print(f"❌ Webアプリケーション偵察でエラーが発生しました: {str(e)}")
+        # エラーが発生しても空の結果を返す
+        error_results = {
+            'target': target,
+            'http_status': None,
+            'https_status': None,
+            'headers': {},
+            'technology_stack': {},
+            'directories': [],
+            'files': [],
+            'forms': [],
+            'vulnerabilities': [],
+            'subdomains': [],
+            'error': str(e)
+        }
+        report_file = save_results(error_results, target, output_dir)
+        print(f"📄 エラーレポートファイル: {report_file}")
+        return error_results
 
 def osint_reconnaissance(target, output_dir):
     """OSINT情報収集を実行"""
     print(f"\n📊 OSINT情報収集を開始しています...")
     print(f"🎯 ターゲット: {target}")
     
-    gatherer = OSINTGatherer(target)
-    results = gatherer.run_full_osint_gathering()
-    
-    report_file = save_results(results, target, output_dir)
-    print(f"📄 レポートファイル: {report_file}")
-    return results
+    try:
+        gatherer = OSINTGatherer(target)
+        results = gatherer.run_full_osint_gathering()
+        
+        report_file = save_results(results, target, output_dir)
+        print(f"📄 レポートファイル: {report_file}")
+        return results
+    except Exception as e:
+        print(f"❌ OSINT情報収集でエラーが発生しました: {str(e)}")
+        # エラーが発生しても空の結果を返す
+        error_results = {
+            'target': target,
+            'whois_info': {},
+            'dns_records': {},
+            'subdomains': [],
+            'email_addresses': [],
+            'social_media': [],
+            'ssl_info': {},
+            'error': str(e)
+        }
+        report_file = save_results(error_results, target, output_dir)
+        print(f"📄 エラーレポートファイル: {report_file}")
+        return error_results
 
 def full_reconnaissance(target, output_dir):
     """完全な偵察を実行"""

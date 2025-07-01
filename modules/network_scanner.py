@@ -33,11 +33,41 @@ class NetworkScanner:
     def resolve_ip(self):
         """IPアドレスを解決"""
         try:
+            # まず、ターゲットがIPアドレスかどうかをチェック
+            if self.is_valid_ip(self.target):
+                self.results['ip'] = self.target
+                return self.target
+            
+            # ドメイン名の場合、IPアドレスを解決
             ip = socket.gethostbyname(self.target)
             self.results['ip'] = ip
             return ip
-        except socket.gaierror:
-            raise Exception(f"IPアドレスの解決に失敗: {self.target}")
+        except socket.gaierror as e:
+            error_msg = f"IPアドレスの解決に失敗: {self.target}"
+            print(f"⚠️  {error_msg}")
+            print(f"   詳細: {str(e)}")
+            print("💡 解決方法:")
+            print("   - インターネット接続を確認してください")
+            print("   - ドメイン名が正しく入力されているか確認してください")
+            print("   - DNSサーバーの設定を確認してください")
+            raise Exception(error_msg)
+        except Exception as e:
+            error_msg = f"予期しないエラー: {str(e)}"
+            print(f"⚠️  {error_msg}")
+            raise Exception(error_msg)
+    
+    def is_valid_ip(self, ip):
+        """IPアドレスが有効かどうかをチェック"""
+        try:
+            parts = ip.split('.')
+            if len(parts) != 4:
+                return False
+            for part in parts:
+                if not 0 <= int(part) <= 255:
+                    return False
+            return True
+        except:
+            return False
     
     def port_scan(self, ip=None, ports=None):
         """ポートスキャンを実行"""
