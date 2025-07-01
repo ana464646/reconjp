@@ -9,6 +9,8 @@ import socket
 import threading
 import nmap
 import time
+import paramiko
+import ftplib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class NetworkScanner:
@@ -27,8 +29,33 @@ class NetworkScanner:
             'open_ports': [],
             'services': {},
             'os_info': {},
-            'scan_time': None
+            'scan_time': None,
+            'auth_tests': {}
         }
+        
+        # よくあるユーザー名とパスワード
+        self.common_credentials = [
+            ('admin', 'admin'),
+            ('admin', 'password'),
+            ('admin', '123456'),
+            ('root', 'root'),
+            ('root', 'password'),
+            ('root', '123456'),
+            ('user', 'user'),
+            ('user', 'password'),
+            ('guest', 'guest'),
+            ('test', 'test'),
+            ('anonymous', ''),
+            ('ftp', 'ftp'),
+            ('anonymous', 'anonymous@example.com'),
+            ('admin', 'admin123'),
+            ('administrator', 'password'),
+            ('pi', 'raspberry'),
+            ('ubuntu', 'ubuntu'),
+            ('centos', 'centos'),
+            ('debian', 'debian'),
+            ('vagrant', 'vagrant')
+        ]
     
     def resolve_ip(self):
         """IPアドレスを解決"""
@@ -68,6 +95,115 @@ class NetworkScanner:
             return True
         except:
             return False
+    
+    def test_ssh_auth(self, ip, port=22):
+        """SSH認証テスト"""
+        print(f"🔐 SSH認証テストを開始: {ip}:{port}")
+        ssh_results = {
+            'anonymous_login': False,
+            'successful_logins': [],
+            'failed_attempts': 0
+        }
+        
+        # 匿名ログイン試行
+        try:
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.connect(ip, port=port, username='anonymous', password='', timeout=5)
+            ssh.close()
+            ssh_results['anonymous_login'] = True
+            print(f"✅ SSH匿名ログイン成功: {ip}:{port}")
+        except:
+            pass
+        
+        # ワードリストログイン試行
+        for username, password in self.common_credentials:
+            try:
+                ssh = paramiko.SSHClient()
+                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                ssh.connect(ip, port=port, username=username, password=password, timeout=5)
+                ssh.close()
+                ssh_results['successful_logins'].append({
+                    'username': username,
+                    'password': password,
+                    'type': 'SSH'
+                })
+                print(f"✅ SSHログイン成功: {username}:{password} @ {ip}:{port}")
+            except:
+                ssh_results['failed_attempts'] += 1
+        
+        return ssh_results
+    
+    def test_ftp_auth(self, ip, port=21):
+        """FTP認証テスト"""
+        print(f"📁 FTP認証テストを開始: {ip}:{port}")
+        ftp_results = {
+            'anonymous_login': False,
+            'successful_logins': [],
+            'failed_attempts': 0
+        }
+        
+        # 匿名ログイン試行
+        try:
+            ftp = ftplib.FTP()
+            ftp.connect(ip, port, timeout=5)
+            ftp.login('anonymous', 'anonymous@example.com')
+            ftp_results['anonymous_login'] = True
+            print(f"✅ FTP匿名ログイン成功: {ip}:{port}")
+            ftp.quit()
+        except:
+            pass
+        
+        # 空パスワードで匿名ログイン試行
+        try:
+            ftp = ftplib.FTP()
+            ftp.connect(ip, port, timeout=5)
+            ftp.login('anonymous', '')
+            ftp_results['anonymous_login'] = True
+            print(f"✅ FTP匿名ログイン成功（空パスワード）: {ip}:{port}")
+            ftp.quit()
+        except:
+            pass
+        
+        # ワードリストログイン試行
+        for username, password in self.common_credentials:
+            try:
+                ftp = ftplib.FTP()
+                ftp.connect(ip, port, timeout=5)
+                ftp.login(username, password)
+                ftp_results['successful_logins'].append({
+                    'username': username,
+                    'password': password,
+                    'type': 'FTP'
+                })
+                print(f"✅ FTPログイン成功: {username}:{password} @ {ip}:{port}")
+                ftp.quit()
+            except:
+                ftp_results['failed_attempts'] += 1
+        
+        return ftp_results
+    
+    def run_auth_tests(self, ip, open_ports):
+        """認証テストを実行"""
+        auth_results = {}
+        
+        # SSHポート（22）が開いている場合
+        if 22 in open_ports:
+            print("🔐 SSH認証テストを実行中...")
+            auth_results['ssh'] = self.test_ssh_auth(ip, 22)
+        
+        # FTPポート（21）が開いている場合
+        if 21 in open_ports:
+            print("📁 FTP認証テストを実行中...")
+            auth_results['ftp'] = self.test_ftp_auth(ip, 21)
+        
+        # SFTPポート（2222）が開いている場合
+        if 2222 in open_ports:
+            print("🔐 SFTP認証テストを実行中...")
+            auth_results['sftp'] = self.test_ssh_auth(ip, 2222)
+        
+        self.results['auth_tests'] = auth_results
+        return auth_results
     
     def port_scan(self, ip=None, ports=None):
         """ポートスキャンを実行"""
@@ -190,6 +326,20 @@ class NetworkScanner:
             print(f"✅ 検出されたサービス: {len(services)}個")
             for port, service in services.items():
                 print(f"   - ポート {port}: {service}")
+        
+        # 認証テスト（SSH/FTPポートが開いている場合）
+        if open_ports and (21 in open_ports or 22 in open_ports or 2222 in open_ports):
+            print("🔐 認証テストを実行中...")
+            auth_results = self.run_auth_tests(ip, open_ports)
+            
+            # 認証テスト結果の表示
+            for service, results in auth_results.items():
+                if results['anonymous_login']:
+                    print(f"⚠️  {service.upper()}匿名ログインが可能です")
+                if results['successful_logins']:
+                    print(f"⚠️  {service.upper()}で{len(results['successful_logins'])}個の認証情報が有効です")
+                    for login in results['successful_logins']:
+                        print(f"   - {login['username']}:{login['password']}")
         
         # OS検出
         print("💻 OS検出を実行中...")

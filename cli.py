@@ -67,6 +67,20 @@ def save_results(results, target, output_dir):
             if 'os_info' in network_data:
                 f.write(f"💻 OS情報: {network_data['os_info']}\n")
             
+            # 認証テスト結果の表示
+            if 'auth_tests' in network_data and network_data['auth_tests']:
+                f.write("\n🔐 【認証テスト結果】\n")
+                f.write("-" * 30 + "\n")
+                for service, auth_result in network_data['auth_tests'].items():
+                    f.write(f"📋 {service.upper()}:\n")
+                    if auth_result.get('anonymous_login'):
+                        f.write(f"   ⚠️  匿名ログイン: 可能\n")
+                    if auth_result.get('successful_logins'):
+                        f.write(f"   ⚠️  有効な認証情報: {len(auth_result['successful_logins'])}個\n")
+                        for login in auth_result['successful_logins']:
+                            f.write(f"     - {login['username']}:{login['password']}\n")
+                    f.write(f"   📊 失敗回数: {auth_result.get('failed_attempts', 0)}回\n")
+            
             f.write("\n")
         
         # Webアプリケーション情報
@@ -416,6 +430,19 @@ def main():
                 print(f"  🔧 検出されたサービス: {len(network_data.get('services', {}))}個")
                 if network_data.get('os_info'):
                     print(f"  💻 OS情報: {network_data.get('os_info')}")
+                
+                # 認証テスト結果の表示
+                if 'auth_tests' in network_data and network_data['auth_tests']:
+                    print(f"  🔐 認証テスト結果:")
+                    for service, auth_result in network_data['auth_tests'].items():
+                        if auth_result.get('anonymous_login'):
+                            print(f"    ⚠️  {service.upper()}匿名ログイン: 可能")
+                        if auth_result.get('successful_logins'):
+                            print(f"    ⚠️  {service.upper()}有効認証: {len(auth_result['successful_logins'])}個")
+                            for login in auth_result['successful_logins'][:3]:  # 最初の3個のみ表示
+                                print(f"      - {login['username']}:{login['password']}")
+                            if len(auth_result['successful_logins']) > 3:
+                                print(f"      ... 他 {len(auth_result['successful_logins']) - 3}個")
             
             if 'web' in results:
                 web_data = results['web']
