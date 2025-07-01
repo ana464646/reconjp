@@ -44,12 +44,21 @@ if /i "%create_venv%"=="y" (
 
 REM 依存関係のインストール
 echo 依存関係をインストール中...
-pip install -r requirements.txt
+echo 基本的な依存関係をインストール中...
+pip install requests dnspython beautifulsoup4 html5lib colorama rich click pyfiglet whois urllib3
+
+echo 追加の依存関係をインストール中...
+pip install python-nmap cryptography shodan censys virustotal-api
 
 if errorlevel 1 (
-    echo エラー: 依存関係のインストールに失敗しました。
-    pause
-    exit /b 1
+    echo 警告: 一部の依存関係のインストールに失敗しました。
+    echo 基本的な機能は動作する可能性があります。
+    echo 続行しますか？ (y/n)
+    set /p continue_anyway=
+    if /i not "%continue_anyway%"=="y" (
+        pause
+        exit /b 1
+    )
 )
 
 echo.

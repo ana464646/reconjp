@@ -39,6 +39,25 @@ ReconJPは、WindowsとMac環境で動作する包括的なペネトレーショ
 
 ## 🛠️ インストール
 
+### Windows環境
+```bash
+# 自動インストールスクリプトを使用
+install.bat
+
+# または手動でインストール
+pip install requests dnspython beautifulsoup4 html5lib colorama rich click pyfiglet whois urllib3
+pip install python-nmap cryptography shodan censys virustotal-api
+```
+
+### Mac/Linux環境
+```bash
+# 自動インストールスクリプトを使用
+./install.sh
+
+# または手動でインストール
+pip install -r requirements.txt
+```
+
 ### 1. リポジトリのクローン
 ```bash
 git clone https://github.com/yourusername/reconjp.git
@@ -47,6 +66,8 @@ cd reconjp
 
 ### 2. 依存関係のインストール
 ```bash
+# Windows環境では上記のコマンドを使用
+# Mac/Linux環境では以下を使用
 pip install -r requirements.txt
 ```
 

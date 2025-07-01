@@ -29,6 +29,7 @@ def read_requirements():
             "dnspython>=2.4.2", 
             "python-nmap>=0.7.1",
             "beautifulsoup4>=4.12.2",
+            "html5lib>=1.1",
             "colorama>=0.4.6",
             "whois>=0.9.27"
         ]

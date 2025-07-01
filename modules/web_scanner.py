@@ -243,7 +243,7 @@ class WebScanner:
         
         try:
             response = requests.get(url, headers=self.headers, timeout=self.timeout, verify=False)
-            soup = BeautifulSoup(response.content, 'html.parser')
+            soup = BeautifulSoup(response.content, 'html5lib')
             
             for form in soup.find_all('form'):
                 form_info = {
