@@ -448,6 +448,9 @@ class WebScanner:
         """完全なWebスキャンを実行"""
         print(f"🌐 Webアプリケーションスキャンを開始しています...")
         
+        # 脆弱性リストを初期化
+        all_vulnerabilities = []
+        
         # HTTP/HTTPS確認
         print("🌐 HTTP/HTTPS状態を確認中...")
         self.check_http_https()
@@ -510,7 +513,7 @@ class WebScanner:
                 print(f"⚠️  サブドメインで検出された脆弱性: {len(subdomain_vulns)}個")
                 for vuln in subdomain_vulns:
                     print(f"   🟡 {vuln['type']}: {vuln['subdomain']}")
-                vulnerabilities.extend(subdomain_vulns)
+                all_vulnerabilities.extend(subdomain_vulns)
         
         # 脆弱性スキャン
         print("⚠️  脆弱性スキャン中...")
@@ -520,12 +523,12 @@ class WebScanner:
             for vuln in main_vulnerabilities:
                 severity_emoji = {"High": "🔴", "Medium": "🟡", "Low": "🟢"}.get(vuln.get('severity', 'Low'), "⚪")
                 print(f"   {severity_emoji} {vuln.get('type', 'Unknown')}")
-            vulnerabilities.extend(main_vulnerabilities)
+            all_vulnerabilities.extend(main_vulnerabilities)
         
-        if not vulnerabilities:
+        if not all_vulnerabilities:
             print("✅ 検出された脆弱性はありません")
         
-        self.results['vulnerabilities'] = vulnerabilities
+        self.results['vulnerabilities'] = all_vulnerabilities
         
         print("🎉 Webアプリケーションスキャンが完了しました！")
         return self.results 
