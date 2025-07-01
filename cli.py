@@ -101,10 +101,25 @@ def save_results(results, target, output_dir):
             
             if 'directories' in web_data and web_data['directories']:
                 f.write(f"📁 検出されたディレクトリ: {len(web_data['directories'])}個\n")
-                for dir_info in web_data['directories'][:10]:  # 最初の10個のみ表示
-                    f.write(f"   - /{dir_info['name']} (ステータス: {dir_info['status']})\n")
-                if len(web_data['directories']) > 10:
-                    f.write(f"   ... 他 {len(web_data['directories']) - 10}個\n")
+                
+                # 隠しディレクトリの表示
+                hidden_dirs = [d for d in web_data['directories'] if d.get('hidden', False)]
+                if hidden_dirs:
+                    f.write(f"🔍 隠しディレクトリ: {len(hidden_dirs)}個\n")
+                    for dir_info in hidden_dirs[:10]:  # 最初の10個のみ表示
+                        status_emoji = {"200": "✅", "301": "🔄", "302": "🔄", "403": "🚫"}.get(str(dir_info['status']), "❓")
+                        f.write(f"   {status_emoji} /{dir_info['name']} - {dir_info.get('title', 'N/A')}\n")
+                    if len(hidden_dirs) > 10:
+                        f.write(f"   ... 他 {len(hidden_dirs) - 10}個\n")
+                
+                # 通常のディレクトリの表示
+                normal_dirs = [d for d in web_data['directories'] if not d.get('hidden', False)]
+                if normal_dirs:
+                    f.write(f"📁 通常ディレクトリ: {len(normal_dirs)}個\n")
+                    for dir_info in normal_dirs[:5]:  # 最初の5個のみ表示
+                        f.write(f"   - /{dir_info['name']} (ステータス: {dir_info['status']})\n")
+                    if len(normal_dirs) > 5:
+                        f.write(f"   ... 他 {len(normal_dirs) - 5}個\n")
             
             if 'files' in web_data and web_data['files']:
                 f.write(f"📄 検出されたファイル: {len(web_data['files'])}個\n")
@@ -450,6 +465,17 @@ def main():
                 print(f"  🌐 HTTPステータス: {web_data.get('http_status', 'N/A')}")
                 print(f"  🔒 HTTPSステータス: {web_data.get('https_status', 'N/A')}")
                 print(f"  📁 検出されたディレクトリ: {len(web_data.get('directories', []))}個")
+                
+                # 隠しディレクトリの表示
+                hidden_dirs = [d for d in web_data.get('directories', []) if d.get('hidden', False)]
+                if hidden_dirs:
+                    print(f"  🔍 隠しディレクトリ: {len(hidden_dirs)}個")
+                    for hidden_dir in hidden_dirs[:3]:  # 最初の3個のみ表示
+                        status_emoji = {"200": "✅", "301": "🔄", "302": "🔄", "403": "🚫"}.get(str(hidden_dir['status']), "❓")
+                        print(f"    {status_emoji} /{hidden_dir['name']} - {hidden_dir.get('title', 'N/A')}")
+                    if len(hidden_dirs) > 3:
+                        print(f"    ... 他 {len(hidden_dirs) - 3}個")
+                
                 print(f"  📄 検出されたファイル: {len(web_data.get('files', []))}個")
                 print(f"  🔗 検出されたサブドメイン: {len(web_data.get('subdomains', []))}個")
                 print(f"  ⚠️  検出された脆弱性: {len(web_data.get('vulnerabilities', []))}個")

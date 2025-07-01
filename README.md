@@ -19,6 +19,7 @@ ReconJPは、WindowsとMac環境で動作する包括的なペネトレーショ
 ### 🌐 Webアプリケーション偵察
 - **HTTP/HTTPS確認**: プロトコル対応状況の確認
 - **ディレクトリ列挙**: 一般的なディレクトリの存在確認
+- **隠しディレクトリ検出**: `/simple`、`/admin`、`/secret`などの隠しディレクトリの検出
 - **ファイル列挙**: 設定ファイルや情報ファイルの検出
 - **技術スタック検出**: CMS、フレームワーク、サーバー技術の特定
 - **フォーム分析**: Webフォームの構造と入力フィールドの解析
@@ -184,9 +185,31 @@ python cli.py example.com --web-only
    - language: PHP
    - cms: WordPress
 📁 ディレクトリ列挙中...
-✅ 検出されたディレクトリ: 5個
-   - /admin (ステータス: 403)
-   - /wp-admin (ステータス: 200)
+🔍 ディレクトリ列挙を開始: http://example.com
+📋 検索対象: 200個のディレクトリ
+🔍 隠しディレクトリ発見: simple (ステータス: 200) - Simple Admin Panel
+🔍 隠しディレクトリ発見: admin (ステータス: 403) - Access Denied
+📁 ディレクトリ発見: images (ステータス: 200)
+📁 ディレクトリ発見: css (ステータス: 200)
+
+📊 ディレクトリ列挙結果:
+   📁 総ディレクトリ数: 15個
+   🔍 隠しディレクトリ数: 2個
+
+⚠️  発見された隠しディレクトリ:
+   ✅ /simple - Simple Admin Panel
+   🚫 /admin - Access Denied
+
+🔍 隠しディレクトリの詳細:
+   ✅ /simple - Simple Admin Panel
+     📄 サイズ: 2048 bytes
+     🖥️  サーバー: nginx/1.18.0
+     📋 タイプ: text/html
+   🚫 /admin - Access Denied
+     📄 サイズ: 512 bytes
+     🖥️  サーバー: nginx/1.18.0
+     📋 タイプ: text/html
+✅ 検出されたディレクトリ: 15個
 📄 ファイル列挙中...
 ✅ 検出されたファイル: 3個
    - robots.txt (ステータス: 200)

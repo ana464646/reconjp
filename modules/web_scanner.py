@@ -31,7 +31,8 @@ class WebScanner:
             'files': [],
             'forms': [],
             'vulnerabilities': [],
-            'subdomains': []
+            'subdomains': [],
+            'virtual_hosts': []
         }
         
         # よくあるディレクトリ
@@ -40,7 +41,80 @@ class WebScanner:
             'api', 'docs', 'test', 'dev', 'stage', 'beta', 'old', 'archive',
             'cgi-bin', 'images', 'css', 'js', 'uploads', 'downloads',
             'includes', 'lib', 'src', 'bin', 'tmp', 'temp', 'cache',
-            'logs', 'error', 'debug', 'status', 'health', 'monitor'
+            'logs', 'error', 'debug', 'status', 'health', 'monitor',
+            # 隠しディレクトリ
+            'simple', 'hidden', 'secret', 'private', 'internal', 'secure',
+            'admin-panel', 'administrator', 'manage', 'management', 'control',
+            'dashboard', 'panel', 'portal', 'console', 'webadmin', 'webmaster',
+            'siteadmin', 'site-admin', 'cpanel', 'whm', 'plesk', 'directadmin',
+            'webmin', 'phpmyadmin', 'mysql', 'database', 'db', 'sql',
+            'backup', 'backups', 'bak', 'old', 'archive', 'archives',
+            'temp', 'tmp', 'cache', 'cached', 'session', 'sessions',
+            'upload', 'uploads', 'files', 'file', 'media', 'assets',
+            'static', 'public', 'private', 'internal', 'external',
+            'api', 'apis', 'rest', 'soap', 'xmlrpc', 'json',
+            'test', 'testing', 'dev', 'development', 'staging', 'beta',
+            'alpha', 'demo', 'sandbox', 'playground', 'lab', 'labs',
+            'tools', 'utilities', 'scripts', 'cgi', 'cgi-bin',
+            'bin', 'sbin', 'usr', 'etc', 'var', 'home', 'root',
+            'windows', 'win', 'system', 'system32', 'sys', 'sys32',
+            'program', 'programs', 'app', 'apps', 'application', 'applications',
+            'web', 'www', 'wwwroot', 'htdocs', 'public_html', 'html',
+            'css', 'js', 'javascript', 'images', 'img', 'pics', 'photos',
+            'doc', 'docs', 'documentation', 'help', 'support', 'faq',
+            'about', 'contact', 'info', 'information', 'news', 'blog',
+            'forum', 'forums', 'board', 'boards', 'chat', 'irc',
+            'mail', 'email', 'webmail', 'smtp', 'pop', 'imap',
+            'ftp', 'ssh', 'telnet', 'remote', 'vpn', 'ssl',
+            'cert', 'certs', 'certificate', 'certificates', 'ca',
+            'auth', 'authentication', 'login', 'logout', 'signin', 'signout',
+            'register', 'registration', 'signup', 'account', 'accounts',
+            'user', 'users', 'member', 'members', 'profile', 'profiles',
+            'settings', 'config', 'configuration', 'setup', 'install',
+            'installer', 'installation', 'upgrade', 'update', 'patch',
+            'maintenance', 'maintain', 'repair', 'fix', 'debug',
+            'error', 'errors', '404', '403', '500', '502', '503',
+            'status', 'health', 'monitor', 'monitoring', 'stats', 'statistics',
+            'analytics', 'tracking', 'track', 'log', 'logs', 'logging',
+            'audit', 'auditing', 'security', 'secure', 'protect', 'protection',
+            'firewall', 'waf', 'ids', 'ips', 'honeypot', 'trap',
+            'admin1', 'admin2', 'admin3', 'administrator1', 'administrator2',
+            'manager', 'management', 'supervisor', 'super', 'master',
+            'root1', 'root2', 'system1', 'system2', 'webmaster1', 'webmaster2',
+            'test1', 'test2', 'test3', 'dev1', 'dev2', 'dev3',
+            'staging1', 'staging2', 'beta1', 'beta2', 'alpha1', 'alpha2',
+            'demo1', 'demo2', 'sandbox1', 'sandbox2', 'lab1', 'lab2',
+            'hidden1', 'hidden2', 'secret1', 'secret2', 'private1', 'private2',
+            'internal1', 'internal2', 'secure1', 'secure2', 'protected1', 'protected2',
+            'admin-panel1', 'admin-panel2', 'dashboard1', 'dashboard2', 'panel1', 'panel2',
+            'portal1', 'portal2', 'console1', 'console2', 'webadmin1', 'webadmin2',
+            'siteadmin1', 'siteadmin2', 'cpanel1', 'cpanel2', 'whm1', 'whm2',
+            'plesk1', 'plesk2', 'directadmin1', 'directadmin2', 'webmin1', 'webmin2',
+            'phpmyadmin1', 'phpmyadmin2', 'mysql1', 'mysql2', 'database1', 'database2',
+            'backup1', 'backup2', 'backup3', 'bak1', 'bak2', 'bak3',
+            'old1', 'old2', 'old3', 'archive1', 'archive2', 'archive3',
+            'temp1', 'temp2', 'tmp1', 'tmp2', 'cache1', 'cache2',
+            'upload1', 'upload2', 'files1', 'files2', 'media1', 'media2',
+            'api1', 'api2', 'api3', 'rest1', 'rest2', 'soap1', 'soap2',
+            'test1', 'test2', 'test3', 'dev1', 'dev2', 'dev3',
+            'tools1', 'tools2', 'utilities1', 'utilities2', 'scripts1', 'scripts2',
+            'web1', 'web2', 'www1', 'www2', 'html1', 'html2',
+            'css1', 'css2', 'js1', 'js2', 'images1', 'images2',
+            'docs1', 'docs2', 'help1', 'help2', 'support1', 'support2',
+            'about1', 'about2', 'contact1', 'contact2', 'info1', 'info2',
+            'news1', 'news2', 'blog1', 'blog2', 'forum1', 'forum2',
+            'mail1', 'mail2', 'email1', 'email2', 'webmail1', 'webmail2',
+            'auth1', 'auth2', 'login1', 'login2', 'signin1', 'signin2',
+            'register1', 'register2', 'signup1', 'signup2', 'account1', 'account2',
+            'user1', 'user2', 'member1', 'member2', 'profile1', 'profile2',
+            'settings1', 'settings2', 'config1', 'config2', 'setup1', 'setup2',
+            'install1', 'install2', 'installer1', 'installer2', 'upgrade1', 'upgrade2',
+            'maintenance1', 'maintenance2', 'repair1', 'repair2', 'fix1', 'fix2',
+            'error1', 'error2', 'status1', 'status2', 'health1', 'health2',
+            'monitor1', 'monitor2', 'stats1', 'stats2', 'analytics1', 'analytics2',
+            'log1', 'log2', 'audit1', 'audit2', 'security1', 'security2',
+            'firewall1', 'firewall2', 'waf1', 'waf2', 'ids1', 'ids2',
+            'honeypot1', 'honeypot2', 'trap1', 'trap2'
         ]
         
         # よくあるファイル
@@ -87,7 +161,7 @@ class WebScanner:
         return protocols
     
     def directory_enumeration(self, base_url=None):
-        """ディレクトリ列挙"""
+        """ディレクトリ列挙（隠しディレクトリ検出含む）"""
         if base_url is None:
             # HTTP/HTTPSの状態に基づいてベースURLを決定
             if self.results.get('https_status') == 200:
@@ -98,23 +172,41 @@ class WebScanner:
                 base_url = f"http://{self.target}"
         
         found_directories = []
+        hidden_directories = []
         
         def check_directory(dir_name):
             try:
                 url = f"{base_url}/{dir_name}"
                 response = requests.get(url, headers=self.headers, timeout=5, verify=False)
                 if response.status_code in [200, 301, 302, 403]:
-                    return {
+                    result = {
                         'name': dir_name,
                         'url': url,
                         'status': response.status_code,
-                        'size': len(response.content)
+                        'size': len(response.content),
+                        'title': self.extract_title(response.text),
+                        'server': response.headers.get('Server', 'Unknown'),
+                        'content_type': response.headers.get('Content-Type', 'Unknown')
                     }
+                    
+                    # 隠しディレクトリかどうかを判定
+                    hidden_keywords = ['hidden', 'secret', 'private', 'internal', 'secure', 'admin', 'simple']
+                    if any(keyword in dir_name.lower() for keyword in hidden_keywords):
+                        result['hidden'] = True
+                        hidden_directories.append(result)
+                        print(f"🔍 隠しディレクトリ発見: {dir_name} (ステータス: {response.status_code}) - {result['title']}")
+                    else:
+                        result['hidden'] = False
+                        print(f"📁 ディレクトリ発見: {dir_name} (ステータス: {response.status_code})")
+                    
+                    return result
                 return None
-            except:
+            except Exception as e:
+                print(f"⚠️  ディレクトリチェックエラー ({dir_name}): {str(e)}")
                 return None
         
-        print(f"ディレクトリ列挙を開始: {base_url}")
+        print(f"🔍 ディレクトリ列挙を開始: {base_url}")
+        print(f"📋 検索対象: {len(self.common_directories)}個のディレクトリ")
         
         with ThreadPoolExecutor(max_workers=20) as executor:
             future_to_dir = {executor.submit(check_directory, dir_name): dir_name for dir_name in self.common_directories}
@@ -123,9 +215,25 @@ class WebScanner:
                 result = future.result()
                 if result:
                     found_directories.append(result)
-                    print(f"ディレクトリ発見: {result['name']} (ステータス: {result['status']})")
         
+        # 結果の整理
         self.results['directories'] = found_directories
+        self.results['hidden_directories'] = hidden_directories
+        
+        # 結果サマリー
+        print(f"\n📊 ディレクトリ列挙結果:")
+        print(f"   📁 総ディレクトリ数: {len(found_directories)}個")
+        print(f"   🔍 隠しディレクトリ数: {len(hidden_directories)}個")
+        
+        if hidden_directories:
+            print(f"\n⚠️  発見された隠しディレクトリ:")
+            for hidden_dir in hidden_directories:
+                status_emoji = {"200": "✅", "301": "🔄", "302": "🔄", "403": "🚫"}.get(str(hidden_dir['status']), "❓")
+                print(f"   {status_emoji} /{hidden_dir['name']} - {hidden_dir['title']}")
+                print(f"     📄 サイズ: {hidden_dir['size']} bytes")
+                print(f"     🖥️  サーバー: {hidden_dir['server']}")
+                print(f"     📋 タイプ: {hidden_dir['content_type']}")
+        
         return found_directories
     
     def file_enumeration(self, base_url=None):
@@ -408,6 +516,110 @@ class WebScanner:
         self.results['subdomains'] = found_subdomains
         return found_subdomains
     
+    def detect_virtual_hosts(self, ip):
+        """隠しドメイン（Virtual Host）検出"""
+        print(f"🔍 隠しドメイン検出を開始: {ip}")
+        
+        virtual_hosts = []
+        
+        # よくあるドメイン名のリスト
+        common_domains = [
+            'example.com', 'test.com', 'dev.com', 'staging.com', 'admin.com',
+            'internal.com', 'local.com', 'corp.com', 'company.com', 'business.com',
+            'web.com', 'site.com', 'app.com', 'api.com', 'service.com',
+            'mail.com', 'smtp.com', 'pop.com', 'imap.com', 'ftp.com',
+            'vpn.com', 'remote.com', 'secure.com', 'ssl.com', 'portal.com',
+            'dashboard.com', 'panel.com', 'control.com', 'manage.com', 'admin.local',
+            'internal.local', 'corp.local', 'company.local', 'test.local', 'dev.local',
+            'staging.local', 'web.local', 'app.local', 'api.local', 'service.local'
+        ]
+        
+        def check_virtual_host(domain):
+            try:
+                # HTTPでチェック
+                http_url = f"http://{ip}"
+                headers = self.headers.copy()
+                headers['Host'] = domain
+                
+                response = requests.get(http_url, headers=headers, timeout=5, verify=False)
+                if response.status_code in [200, 301, 302, 403]:
+                    title = self.extract_title(response.text)
+                    if title and title != "タイトルなし" and "default" not in title.lower():
+                        return {
+                            'domain': domain,
+                            'protocol': 'http',
+                            'status': response.status_code,
+                            'title': title,
+                            'server': response.headers.get('Server', 'Unknown'),
+                            'url': http_url,
+                            'host_header': domain
+                        }
+                
+                # HTTPSでチェック
+                https_url = f"https://{ip}"
+                response = requests.get(https_url, headers=headers, timeout=5, verify=False)
+                if response.status_code in [200, 301, 302, 403]:
+                    title = self.extract_title(response.text)
+                    if title and title != "タイトルなし" and "default" not in title.lower():
+                        return {
+                            'domain': domain,
+                            'protocol': 'https',
+                            'status': response.status_code,
+                            'title': title,
+                            'server': response.headers.get('Server', 'Unknown'),
+                            'url': https_url,
+                            'host_header': domain
+                        }
+                
+                return None
+            except:
+                return None
+        
+        # マルチスレッドでVirtual Host検出
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            future_to_domain = {executor.submit(check_virtual_host, domain): domain for domain in common_domains}
+            
+            for future in as_completed(future_to_domain):
+                result = future.result()
+                if result:
+                    virtual_hosts.append(result)
+                    print(f"✅ 隠しドメイン発見: {result['domain']} ({result['protocol']}) - {result['title']}")
+        
+        # カスタムドメインのテスト（IPアドレスの場合）
+        if self.is_valid_ip(self.target):
+            custom_domains = [
+                f"{self.target}.local",
+                f"www.{self.target}.local",
+                f"admin.{self.target}.local",
+                f"internal.{self.target}.local",
+                f"corp.{self.target}.local",
+                f"test.{self.target}.local",
+                f"dev.{self.target}.local",
+                f"staging.{self.target}.local"
+            ]
+            
+            for domain in custom_domains:
+                result = check_virtual_host(domain)
+                if result:
+                    virtual_hosts.append(result)
+                    print(f"✅ カスタム隠しドメイン発見: {result['domain']} ({result['protocol']}) - {result['title']}")
+        
+        self.results['virtual_hosts'] = virtual_hosts
+        return virtual_hosts
+    
+    def is_valid_ip(self, ip):
+        """IPアドレスが有効かどうかをチェック"""
+        try:
+            parts = ip.split('.')
+            if len(parts) != 4:
+                return False
+            for part in parts:
+                if not 0 <= int(part) <= 255:
+                    return False
+            return True
+        except:
+            return False
+    
     def extract_title(self, html_content):
         """HTMLからタイトルを抽出"""
         try:
@@ -478,6 +690,17 @@ class WebScanner:
         directories = self.directory_enumeration()
         if directories:
             print(f"✅ 検出されたディレクトリ: {len(directories)}個")
+            
+            # 隠しディレクトリの詳細表示
+            hidden_dirs = [d for d in directories if d.get('hidden', False)]
+            if hidden_dirs:
+                print(f"🔍 隠しディレクトリの詳細:")
+                for hidden_dir in hidden_dirs:
+                    status_emoji = {"200": "✅", "301": "🔄", "302": "🔄", "403": "🚫"}.get(str(hidden_dir['status']), "❓")
+                    print(f"   {status_emoji} /{hidden_dir['name']} - {hidden_dir['title']}")
+                    print(f"     📄 サイズ: {hidden_dir['size']} bytes")
+                    print(f"     🖥️  サーバー: {hidden_dir['server']}")
+                    print(f"     📋 タイプ: {hidden_dir['content_type']}")
         else:
             print("ℹ️  検出されたディレクトリはありません")
         
