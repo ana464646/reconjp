@@ -59,6 +59,23 @@ def example_web_scan():
     print(f"検出されたファイル数: {len(results.get('files', []))}")
     print(f"脆弱性数: {len(results.get('vulnerabilities', []))}")
     
+    # 脆弱性の詳細表示
+    vulnerabilities = results.get('vulnerabilities', [])
+    if vulnerabilities:
+        print("\n検出された脆弱性:")
+        for vuln in vulnerabilities[:3]:  # 最初の3つを表示
+            severity_emoji = {
+                'High': '🔴',
+                'Medium': '🟡',
+                'Low': '🟢'
+            }.get(vuln.get('severity', 'Low'), '⚪')
+            
+            cve_info = f" (CVE: {vuln.get('cve', 'N/A')})" if vuln.get('cve') else ""
+            cms_info = f" [CMS: {vuln.get('cms', 'N/A')}]" if vuln.get('cms') else ""
+            
+            print(f"  {severity_emoji} {vuln.get('type', 'Unknown')}{cve_info}{cms_info}")
+            print(f"    URL: {vuln.get('url', 'N/A')}")
+    
     return results
 
 def example_osint_gathering():
@@ -107,6 +124,11 @@ def example_custom_scan():
     tech_stack = web_scanner.technology_detection()
     print(f"技術スタック: {tech_stack}")
     
+    # 脆弱性スキャンのみ実行
+    print("脆弱性スキャン中...")
+    vulnerabilities = web_scanner.basic_vulnerability_scan()
+    print(f"検出された脆弱性数: {len(vulnerabilities)}")
+    
     # OSINT収集器
     osint_gatherer = OSINTGatherer(target)
     
@@ -114,6 +136,40 @@ def example_custom_scan():
     print("DNSレコード取得中...")
     dns_records = osint_gatherer.get_dns_records()
     print(f"DNSレコード: {dns_records}")
+
+def example_vulnerability_scan():
+    """脆弱性スキャンの詳細使用例"""
+    print("\n=== 脆弱性スキャンの詳細使用例 ===")
+    
+    target = "example.com"
+    web_scanner = WebScanner(target)
+    
+    # 基本的な脆弱性スキャン
+    print("基本的な脆弱性スキャンを実行中...")
+    vulnerabilities = web_scanner.basic_vulnerability_scan()
+    
+    if vulnerabilities:
+        print(f"\n検出された脆弱性 ({len(vulnerabilities)}個):")
+        for i, vuln in enumerate(vulnerabilities, 1):
+            severity_emoji = {
+                'High': '🔴',
+                'Medium': '🟡',
+                'Low': '🟢'
+            }.get(vuln.get('severity', 'Low'), '⚪')
+            
+            cve_info = f" (CVE: {vuln.get('cve', 'N/A')})" if vuln.get('cve') else ""
+            cms_info = f" [CMS: {vuln.get('cms', 'N/A')}]" if vuln.get('cms') else ""
+            server_info = f" [Server: {vuln.get('server', 'N/A')}]" if vuln.get('server') else ""
+            
+            print(f"  {i}. {severity_emoji} {vuln.get('type', 'Unknown')}{cve_info}{cms_info}{server_info}")
+            print(f"     URL: {vuln.get('url', 'N/A')}")
+            if vuln.get('description'):
+                print(f"     説明: {vuln['description']}")
+            print()
+    else:
+        print("✅ 脆弱性は検出されませんでした")
+    
+    return vulnerabilities
 
 def example_error_handling():
     """エラーハンドリングの使用例"""
@@ -146,6 +202,7 @@ def main():
         example_web_scan()
         example_osint_gathering()
         example_custom_scan()
+        example_vulnerability_scan()
         example_error_handling()
         
         print("\n✅ 全ての使用例が完了しました！")

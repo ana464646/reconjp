@@ -501,6 +501,28 @@ def main():
                         print(f"    {severity_emoji} {vuln_info}")
                     if len(vulnerabilities) > 3:
                         print(f"    ... 他 {len(vulnerabilities) - 3}個")
+                
+                # 脆弱性スキャン結果の表示
+                if web_results.get('vulnerabilities'):
+                    print(f"\n🔍 脆弱性スキャン結果:")
+                    for vuln in web_results['vulnerabilities']:
+                        severity_emoji = {
+                            'High': '🔴',
+                            'Medium': '🟡', 
+                            'Low': '🟢'
+                        }.get(vuln.get('severity', 'Low'), '⚪')
+                        
+                        cve_info = f" (CVE: {vuln.get('cve', 'N/A')})" if vuln.get('cve') else ""
+                        cms_info = f" [CMS: {vuln.get('cms', 'N/A')}]" if vuln.get('cms') else ""
+                        server_info = f" [Server: {vuln.get('server', 'N/A')}]" if vuln.get('server') else ""
+                        
+                        print(f"  {severity_emoji} {vuln['type']}{cve_info}{cms_info}{server_info}")
+                        print(f"     URL: {vuln.get('url', 'N/A')}")
+                        if vuln.get('description'):
+                            print(f"     説明: {vuln['description']}")
+                        print()
+                else:
+                    print(f"\n✅ 脆弱性は検出されませんでした")
             
             if 'osint' in results:
                 osint_data = results['osint']

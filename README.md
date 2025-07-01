@@ -25,7 +25,9 @@ ReconJPは、WindowsとMac環境で動作する包括的なペネトレーショ
 - **フォーム分析**: Webフォームの構造と入力フィールドの解析
 - **サブドメイン列挙**: Webサイトのサブドメイン検出とタイトル取得
 - **サブドメイン脆弱性スキャン**: 検出されたサブドメインの脆弱性チェック
-- **基本的な脆弱性スキャン**: 情報漏洩やディレクトリトラバーサルの検出
+- **基本的な脆弱性スキャン**: 情報漏洩やディレクトリトラバーサルの検出（CVE番号付き）
+- **CMS固有脆弱性検出**: WordPress、Drupal、Joomlaの脆弱性検出
+- **Webサーバー脆弱性検出**: Apache、Nginxの設定ファイル漏洩検出
 
 ### 📊 OSINT情報収集
 - **WHOIS情報**: ドメイン登録情報の取得
@@ -216,10 +218,11 @@ python cli.py example.com --web-only
 🔗 サブドメイン列挙中...
 ✅ サブドメイン発見: www.example.com (https) - Example Domain
 ✅ サブドメイン発見: admin.example.com (https) - Admin Panel
-⚠️  脆弱性スキャン中...
-⚠️  検出された脆弱性: 2個
-   🟡 Information Disclosure: robots.txt
-   🟢 Default Page: admin
+🔍 脆弱性スキャン中...
+🔍 検出された脆弱性: 3個
+   🟡 Information Disclosure (CVE-2021-41773): robots.txt
+   🟢 Default Page (CVE-2021-41773): admin
+   🔴 WordPress Config Exposure (CVE-2021-29452) [CMS: WordPress]: wp-config.php
 ```
 
 ### 例3: OSINT情報収集

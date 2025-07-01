@@ -266,6 +266,16 @@ class ReconTool:
                 tech_stack = self.technology_detection()
                 web_info['technology_stack'] = tech_stack
             
+            # 脆弱性スキャン
+            if web_info.get('http_status') == 200 or web_info.get('https_status') == 200:
+                self.log("脆弱性スキャンを実行中...", "INFO")
+                from modules.web_scanner import WebScanner
+                web_scanner = WebScanner(self.target)
+                web_scanner.results = web_info  # 既存の結果を設定
+                vulnerabilities = web_scanner.basic_vulnerability_scan()
+                web_info['vulnerabilities'] = vulnerabilities
+                self.results['vulnerabilities'] = vulnerabilities
+            
             self.results['web_recon'] = web_info
             
         except Exception as e:
@@ -489,12 +499,29 @@ class ReconTool:
             f.write("\n")
             
             # 脆弱性情報
-            if self.results['vulnerabilities']:
-                f.write("⚠️  【脆弱性情報】\n")
+            if self.results.get('vulnerabilities'):
+                f.write("🔍 【脆弱性情報】\n")
                 f.write("=" * 50 + "\n")
                 for vuln in self.results['vulnerabilities']:
-                    f.write(f"  🚨 {vuln}\n")
-                f.write("\n")
+                    severity_emoji = {
+                        'High': '🔴',
+                        'Medium': '🟡',
+                        'Low': '🟢'
+                    }.get(vuln.get('severity', 'Low'), '⚪')
+                    
+                    cve_info = f" (CVE: {vuln.get('cve', 'N/A')})" if vuln.get('cve') else ""
+                    cms_info = f" [CMS: {vuln.get('cms', 'N/A')}]" if vuln.get('cms') else ""
+                    server_info = f" [Server: {vuln.get('server', 'N/A')}]" if vuln.get('server') else ""
+                    
+                    f.write(f"  {severity_emoji} {vuln.get('type', 'Unknown')}{cve_info}{cms_info}{server_info}\n")
+                    f.write(f"    URL: {vuln.get('url', 'N/A')}\n")
+                    if vuln.get('description'):
+                        f.write(f"    説明: {vuln['description']}\n")
+                    f.write(f"    重要度: {vuln.get('severity', 'Unknown')}\n\n")
+            else:
+                f.write("✅ 【脆弱性情報】\n")
+                f.write("=" * 50 + "\n")
+                f.write("  脆弱性は検出されませんでした\n\n")
             
             f.write("=" * 80 + "\n")
             f.write("✅ レポート生成完了\n")
