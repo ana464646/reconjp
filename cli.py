@@ -7,7 +7,6 @@ ReconJP - コマンドラインインターフェース
 
 import os
 import sys
-import json
 import argparse
 from datetime import datetime
 
@@ -33,14 +32,9 @@ def save_results(results, target, output_dir):
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
-    # JSONファイル
-    json_file = os.path.join(output_dir, f"recon_{target}_{timestamp}.json")
-    with open(json_file, 'w', encoding='utf-8') as f:
-        json.dump(results, f, indent=2, ensure_ascii=False)
-    
-    # 日本語レポートファイル
-    txt_file = os.path.join(output_dir, f"recon_{target}_{timestamp}.txt")
-    with open(txt_file, 'w', encoding='utf-8') as f:
+    # 日本語レポートファイル（1つのレポートのみ）
+    report_file = os.path.join(output_dir, f"recon_{target}_{timestamp}.txt")
+    with open(report_file, 'w', encoding='utf-8') as f:
         f.write("=" * 80 + "\n")
         f.write("🔍 ReconJP - ペネトレーションテスト偵察レポート 📊\n")
         f.write("=" * 80 + "\n\n")
@@ -217,11 +211,9 @@ def save_results(results, target, output_dir):
         f.write("🌐 公式サイト: https://github.com/yourusername/reconjp\n")
         f.write("=" * 80 + "\n")
     
-    print(f"📄 レポートが保存されました:")
-    print(f"  📊 JSON形式: {json_file}")
-    print(f"  📝 日本語レポート: {txt_file}")
+    print(f"📄 レポートが保存されました: {report_file}")
     
-    return json_file, txt_file
+    return report_file
 
 def network_reconnaissance(target, output_dir):
     """ネットワーク偵察を実行"""
@@ -231,7 +223,8 @@ def network_reconnaissance(target, output_dir):
     scanner = NetworkScanner(target)
     results = scanner.run_full_network_scan()
     
-    save_results(results, target, output_dir)
+    report_file = save_results(results, target, output_dir)
+    print(f"📄 レポートファイル: {report_file}")
     return results
 
 def web_reconnaissance(target, output_dir):
@@ -242,7 +235,8 @@ def web_reconnaissance(target, output_dir):
     scanner = WebScanner(target)
     results = scanner.run_full_web_scan()
     
-    save_results(results, target, output_dir)
+    report_file = save_results(results, target, output_dir)
+    print(f"📄 レポートファイル: {report_file}")
     return results
 
 def osint_reconnaissance(target, output_dir):
@@ -253,7 +247,8 @@ def osint_reconnaissance(target, output_dir):
     gatherer = OSINTGatherer(target)
     results = gatherer.run_full_osint_gathering()
     
-    save_results(results, target, output_dir)
+    report_file = save_results(results, target, output_dir)
+    print(f"📄 レポートファイル: {report_file}")
     return results
 
 def full_reconnaissance(target, output_dir):
@@ -290,10 +285,11 @@ def full_reconnaissance(target, output_dir):
     
     # 統合結果を保存
     print("\n📝 統合レポートを作成中...")
-    save_results(all_results, target, output_dir)
+    report_file = save_results(all_results, target, output_dir)
     
     print(f"\n✅ 完全な偵察が完了しました！")
     print(f"🎯 ターゲット: {target}")
+    print(f"📄 レポートファイル: {report_file}")
     return all_results
 
 def main():

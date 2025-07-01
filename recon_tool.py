@@ -7,8 +7,6 @@ Windows/Mac対応の包括的なネットワーク・Webアプリケーション
 
 import os
 import sys
-import json
-import csv
 import time
 import socket
 import threading
@@ -415,80 +413,95 @@ class ReconTool:
         """レポート生成"""
         self.log("レポートを生成中...", "INFO")
         
-        # JSONレポート
-        json_file = os.path.join(self.output_dir, f"recon_report_{self.target}.json")
-        with open(json_file, 'w', encoding='utf-8') as f:
-            json.dump(self.results, f, indent=2, ensure_ascii=False)
-        
-        # CSVレポート
-        csv_file = os.path.join(self.output_dir, f"recon_report_{self.target}.csv")
-        with open(csv_file, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
-            writer.writerow(['Category', 'Item', 'Value'])
+        # テキストレポート（1つのレポートのみ）
+        report_file = os.path.join(self.output_dir, f"recon_report_{self.target}.txt")
+        with open(report_file, 'w', encoding='utf-8') as f:
+            f.write("=" * 80 + "\n")
+            f.write("🔍 ReconJP - ペネトレーションテスト偵察レポート 🔍\n")
+            f.write("=" * 80 + "\n\n")
+            
+            f.write(f"🎯 ターゲット: {self.target}\n")
+            f.write(f"📅 実行日時: {self.results['timestamp']}\n")
+            f.write(f"📁 レポートファイル: {report_file}\n\n")
             
             # ネットワーク情報
-            for key, value in self.results['network_scan'].items():
-                if isinstance(value, dict):
-                    for k, v in value.items():
-                        writer.writerow(['Network', f"{key}_{k}", str(v)])
-                else:
-                    writer.writerow(['Network', key, str(value)])
-            
-            # DNS情報
-            for key, value in self.results['dns_info'].items():
-                if isinstance(value, list):
-                    writer.writerow(['DNS', key, ', '.join(value)])
-                else:
-                    writer.writerow(['DNS', key, str(value)])
-            
-            # Web情報
-            for key, value in self.results['web_recon'].items():
-                if isinstance(value, dict):
-                    for k, v in value.items():
-                        writer.writerow(['Web', f"{key}_{k}", str(v)])
-                else:
-                    writer.writerow(['Web', key, str(value)])
-        
-        # テキストレポート
-        txt_file = os.path.join(self.output_dir, f"recon_report_{self.target}.txt")
-        with open(txt_file, 'w', encoding='utf-8') as f:
-            f.write("=" * 60 + "\n")
-            f.write("ReconJP - ペネトレーションテスト偵察レポート\n")
-            f.write("=" * 60 + "\n\n")
-            
-            f.write(f"ターゲット: {self.target}\n")
-            f.write(f"実行日時: {self.results['timestamp']}\n\n")
-            
-            # ネットワーク情報
-            f.write("【ネットワーク情報】\n")
-            f.write("-" * 30 + "\n")
-            for key, value in self.results['network_scan'].items():
-                f.write(f"{key}: {value}\n")
+            f.write("🌐 【ネットワーク情報】\n")
+            f.write("=" * 50 + "\n")
+            if self.results['network_scan']:
+                for key, value in self.results['network_scan'].items():
+                    if isinstance(value, dict):
+                        f.write(f"  📋 {key}:\n")
+                        for k, v in value.items():
+                            f.write(f"    • {k}: {v}\n")
+                    elif isinstance(value, list):
+                        f.write(f"  📋 {key}: {', '.join(map(str, value))}\n")
+                    else:
+                        f.write(f"  📋 {key}: {value}\n")
+            else:
+                f.write("  ⚠️  ネットワーク情報が取得できませんでした\n")
             f.write("\n")
             
             # DNS情報
-            f.write("【DNS情報】\n")
-            f.write("-" * 30 + "\n")
-            for key, value in self.results['dns_info'].items():
-                f.write(f"{key}: {value}\n")
+            f.write("🔗 【DNS情報】\n")
+            f.write("=" * 50 + "\n")
+            if self.results['dns_info']:
+                for key, value in self.results['dns_info'].items():
+                    if isinstance(value, list):
+                        f.write(f"  📋 {key}: {', '.join(value)}\n")
+                    else:
+                        f.write(f"  📋 {key}: {value}\n")
+            else:
+                f.write("  ⚠️  DNS情報が取得できませんでした\n")
             f.write("\n")
             
             # Web情報
-            f.write("【Webアプリケーション情報】\n")
-            f.write("-" * 30 + "\n")
-            for key, value in self.results['web_recon'].items():
-                f.write(f"{key}: {value}\n")
+            f.write("🌍 【Webアプリケーション情報】\n")
+            f.write("=" * 50 + "\n")
+            if self.results['web_recon']:
+                for key, value in self.results['web_recon'].items():
+                    if isinstance(value, dict):
+                        f.write(f"  📋 {key}:\n")
+                        for k, v in value.items():
+                            f.write(f"    • {k}: {v}\n")
+                    elif isinstance(value, list):
+                        f.write(f"  📋 {key}: {', '.join(map(str, value))}\n")
+                    else:
+                        f.write(f"  📋 {key}: {value}\n")
+            else:
+                f.write("  ⚠️  Web情報が取得できませんでした\n")
             f.write("\n")
             
             # OSINT情報
-            f.write("【OSINT情報】\n")
-            f.write("-" * 30 + "\n")
-            for key, value in self.results['osint'].items():
-                f.write(f"{key}: {value}\n")
+            f.write("🔎 【OSINT情報】\n")
+            f.write("=" * 50 + "\n")
+            if self.results['osint']:
+                for key, value in self.results['osint'].items():
+                    if isinstance(value, dict):
+                        f.write(f"  📋 {key}:\n")
+                        for k, v in value.items():
+                            f.write(f"    • {k}: {v}\n")
+                    elif isinstance(value, list):
+                        f.write(f"  📋 {key}: {', '.join(map(str, value))}\n")
+                    else:
+                        f.write(f"  📋 {key}: {value}\n")
+            else:
+                f.write("  ⚠️  OSINT情報が取得できませんでした\n")
             f.write("\n")
+            
+            # 脆弱性情報
+            if self.results['vulnerabilities']:
+                f.write("⚠️  【脆弱性情報】\n")
+                f.write("=" * 50 + "\n")
+                for vuln in self.results['vulnerabilities']:
+                    f.write(f"  🚨 {vuln}\n")
+                f.write("\n")
+            
+            f.write("=" * 80 + "\n")
+            f.write("✅ レポート生成完了\n")
+            f.write("=" * 80 + "\n")
         
-        self.log(f"レポートが生成されました: {self.output_dir}", "SUCCESS")
-        return json_file, csv_file, txt_file
+        self.log(f"📄 レポートが生成されました: {report_file}", "SUCCESS")
+        return report_file
     
     def run_full_reconnaissance(self):
         """完全な偵察を実行"""
