@@ -101,11 +101,22 @@ def save_results(results, target, output_dir):
                 if len(web_data['files']) > 5:
                     f.write(f"   ... 他 {len(web_data['files']) - 5}個\n")
             
+            if 'subdomains' in web_data and web_data['subdomains']:
+                f.write(f"🔗 検出されたサブドメイン: {len(web_data['subdomains'])}個\n")
+                for subdomain in web_data['subdomains'][:5]:  # 最初の5個のみ表示
+                    f.write(f"   - {subdomain['subdomain']} ({subdomain['protocol']}) - {subdomain['title']}\n")
+                if len(web_data['subdomains']) > 5:
+                    f.write(f"   ... 他 {len(web_data['subdomains']) - 5}個\n")
+            
             if 'vulnerabilities' in web_data and web_data['vulnerabilities']:
                 f.write(f"⚠️  検出された脆弱性: {len(web_data['vulnerabilities'])}個\n")
                 for vuln in web_data['vulnerabilities']:
                     severity_emoji = {"High": "🔴", "Medium": "🟡", "Low": "🟢"}.get(vuln.get('severity', 'Low'), "⚪")
-                    f.write(f"   {severity_emoji} {vuln.get('type', 'Unknown')}: {vuln.get('url', vuln.get('file', vuln.get('page', 'N/A')))}\n")
+                    vuln_url = vuln.get('url', vuln.get('file', vuln.get('page', 'N/A')))
+                    if 'subdomain' in vuln:
+                        f.write(f"   {severity_emoji} {vuln.get('type', 'Unknown')} ({vuln['subdomain']}): {vuln_url}\n")
+                    else:
+                        f.write(f"   {severity_emoji} {vuln.get('type', 'Unknown')}: {vuln_url}\n")
             
             f.write("\n")
         
@@ -361,7 +372,17 @@ def main():
                 print(f"  🔒 HTTPSステータス: {web_data.get('https_status', 'N/A')}")
                 print(f"  📁 検出されたディレクトリ: {len(web_data.get('directories', []))}個")
                 print(f"  📄 検出されたファイル: {len(web_data.get('files', []))}個")
+                print(f"  🔗 検出されたサブドメイン: {len(web_data.get('subdomains', []))}個")
                 print(f"  ⚠️  検出された脆弱性: {len(web_data.get('vulnerabilities', []))}個")
+                
+                # サブドメインの詳細表示
+                subdomains = web_data.get('subdomains', [])
+                if subdomains:
+                    print(f"  🔍 サブドメインの詳細:")
+                    for subdomain in subdomains[:3]:  # 最初の3個のみ表示
+                        print(f"    🔗 {subdomain['subdomain']} ({subdomain['protocol']}) - {subdomain['title']}")
+                    if len(subdomains) > 3:
+                        print(f"    ... 他 {len(subdomains) - 3}個")
                 
                 # 脆弱性の詳細表示
                 vulnerabilities = web_data.get('vulnerabilities', [])
@@ -369,7 +390,10 @@ def main():
                     print(f"  🔍 脆弱性の詳細:")
                     for vuln in vulnerabilities[:3]:  # 最初の3個のみ表示
                         severity_emoji = {"High": "🔴", "Medium": "🟡", "Low": "🟢"}.get(vuln.get('severity', 'Low'), "⚪")
-                        print(f"    {severity_emoji} {vuln.get('type', 'Unknown')}")
+                        vuln_info = vuln.get('type', 'Unknown')
+                        if 'subdomain' in vuln:
+                            vuln_info += f" ({vuln['subdomain']})"
+                        print(f"    {severity_emoji} {vuln_info}")
                     if len(vulnerabilities) > 3:
                         print(f"    ... 他 {len(vulnerabilities) - 3}個")
             

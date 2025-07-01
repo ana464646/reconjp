@@ -30,7 +30,8 @@ class WebScanner:
             'directories': [],
             'files': [],
             'forms': [],
-            'vulnerabilities': []
+            'vulnerabilities': [],
+            'subdomains': []
         }
         
         # よくあるディレクトリ
@@ -48,6 +49,20 @@ class WebScanner:
             'phpinfo.php', 'info.php', 'test.php', 'admin.php',
             'config.php', 'wp-config.php', 'config.ini', '.env',
             'README.md', 'CHANGELOG.txt', 'LICENSE.txt'
+        ]
+        
+        # よくあるサブドメイン（Webサイト用）
+        self.common_subdomains = [
+            'www', 'mail', 'ftp', 'admin', 'blog', 'dev', 'test', 'stage',
+            'api', 'cdn', 'static', 'img', 'images', 'media', 'support',
+            'help', 'docs', 'forum', 'shop', 'store', 'app', 'mobile',
+            'webmail', 'remote', 'vpn', 'ns1', 'ns2', 'mx1', 'mx2',
+            'smtp', 'pop', 'imap', 'calendar', 'drive', 'cloud',
+            'git', 'svn', 'jenkins', 'jira', 'confluence', 'wiki',
+            'dashboard', 'panel', 'control', 'manage', 'portal',
+            'secure', 'ssl', 'login', 'auth', 'account', 'user',
+            'billing', 'payment', 'order', 'cart', 'checkout',
+            'news', 'press', 'about', 'contact', 'careers', 'jobs'
         ]
     
     def check_http_https(self):
@@ -331,6 +346,104 @@ class WebScanner:
         self.results['vulnerabilities'] = vulnerabilities
         return vulnerabilities
     
+    def enumerate_subdomains(self):
+        """サブドメイン列挙（Webサイト用）"""
+        found_subdomains = []
+        
+        def check_subdomain(subdomain):
+            try:
+                full_domain = f"{subdomain}.{self.target}"
+                
+                # HTTPでチェック
+                http_url = f"http://{full_domain}"
+                try:
+                    response = requests.get(http_url, headers=self.headers, timeout=5, verify=False)
+                    if response.status_code in [200, 301, 302, 403]:
+                        return {
+                            'subdomain': full_domain,
+                            'protocol': 'http',
+                            'status': response.status_code,
+                            'title': self.extract_title(response.text),
+                            'server': response.headers.get('Server', 'Unknown'),
+                            'url': http_url
+                        }
+                except:
+                    pass
+                
+                # HTTPSでチェック
+                https_url = f"https://{full_domain}"
+                try:
+                    response = requests.get(https_url, headers=self.headers, timeout=5, verify=False)
+                    if response.status_code in [200, 301, 302, 403]:
+                        return {
+                            'subdomain': full_domain,
+                            'protocol': 'https',
+                            'status': response.status_code,
+                            'title': self.extract_title(response.text),
+                            'server': response.headers.get('Server', 'Unknown'),
+                            'url': https_url
+                        }
+                except:
+                    pass
+                
+                return None
+            except:
+                return None
+        
+        print(f"🔗 サブドメイン列挙を開始: {self.target}")
+        
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            future_to_subdomain = {executor.submit(check_subdomain, subdomain): subdomain for subdomain in self.common_subdomains}
+            
+            for future in as_completed(future_to_subdomain):
+                result = future.result()
+                if result:
+                    found_subdomains.append(result)
+                    print(f"✅ サブドメイン発見: {result['subdomain']} ({result['protocol']}) - {result['title']}")
+        
+        self.results['subdomains'] = found_subdomains
+        return found_subdomains
+    
+    def extract_title(self, html_content):
+        """HTMLからタイトルを抽出"""
+        try:
+            soup = BeautifulSoup(html_content, 'html5lib')
+            title_tag = soup.find('title')
+            if title_tag:
+                title = title_tag.get_text().strip()
+                return title[:50] + "..." if len(title) > 50 else title
+            return "タイトルなし"
+        except:
+            return "タイトルなし"
+    
+    def scan_subdomain_vulnerabilities(self, subdomain_info):
+        """サブドメインの脆弱性スキャン"""
+        vulnerabilities = []
+        url = subdomain_info['url']
+        
+        # 基本的な脆弱性チェック
+        test_paths = [
+            '/admin', '/login', '/wp-admin', '/phpmyadmin',
+            '/config', '/backup', '/test', '/debug',
+            '/robots.txt', '/.htaccess', '/web.config'
+        ]
+        
+        for path in test_paths:
+            try:
+                test_url = f"{url.rstrip('/')}{path}"
+                response = requests.get(test_url, headers=self.headers, timeout=5, verify=False)
+                if response.status_code in [200, 301, 302]:
+                    vulnerabilities.append({
+                        'type': 'Subdomain Path Discovery',
+                        'url': test_url,
+                        'subdomain': subdomain_info['subdomain'],
+                        'severity': 'Medium'
+                    })
+            except:
+                pass
+        
+        return vulnerabilities
+    
     def run_full_web_scan(self):
         """完全なWebスキャンを実行"""
         print(f"🌐 Webアプリケーションスキャンを開始しています...")
@@ -375,16 +488,44 @@ class WebScanner:
         else:
             print("ℹ️  検出されたフォームはありません")
         
+        # サブドメイン列挙
+        print("🔗 サブドメイン列挙中...")
+        subdomains = self.enumerate_subdomains()
+        if subdomains:
+            print(f"✅ 検出されたサブドメイン: {len(subdomains)}個")
+            for subdomain in subdomains:
+                print(f"   - {subdomain['subdomain']} ({subdomain['protocol']}) - {subdomain['title']}")
+        else:
+            print("ℹ️  検出されたサブドメインはありません")
+        
+        # サブドメインの脆弱性スキャン
+        if subdomains:
+            print("🔍 サブドメインの脆弱性スキャン中...")
+            subdomain_vulns = []
+            for subdomain in subdomains:
+                vulns = self.scan_subdomain_vulnerabilities(subdomain)
+                subdomain_vulns.extend(vulns)
+            
+            if subdomain_vulns:
+                print(f"⚠️  サブドメインで検出された脆弱性: {len(subdomain_vulns)}個")
+                for vuln in subdomain_vulns:
+                    print(f"   🟡 {vuln['type']}: {vuln['subdomain']}")
+                vulnerabilities.extend(subdomain_vulns)
+        
         # 脆弱性スキャン
         print("⚠️  脆弱性スキャン中...")
-        vulnerabilities = self.basic_vulnerability_scan()
-        if vulnerabilities:
-            print(f"⚠️  検出された脆弱性: {len(vulnerabilities)}個")
-            for vuln in vulnerabilities:
+        main_vulnerabilities = self.basic_vulnerability_scan()
+        if main_vulnerabilities:
+            print(f"⚠️  メインドメインで検出された脆弱性: {len(main_vulnerabilities)}個")
+            for vuln in main_vulnerabilities:
                 severity_emoji = {"High": "🔴", "Medium": "🟡", "Low": "🟢"}.get(vuln.get('severity', 'Low'), "⚪")
                 print(f"   {severity_emoji} {vuln.get('type', 'Unknown')}")
-        else:
+            vulnerabilities.extend(main_vulnerabilities)
+        
+        if not vulnerabilities:
             print("✅ 検出された脆弱性はありません")
+        
+        self.results['vulnerabilities'] = vulnerabilities
         
         print("🎉 Webアプリケーションスキャンが完了しました！")
         return self.results 
