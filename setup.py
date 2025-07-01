@@ -10,13 +10,28 @@ import os
 
 # READMEファイルを読み込み
 def read_readme():
-    with open("README.md", "r", encoding="utf-8") as fh:
-        return fh.read()
+    try:
+        with open("README.md", "r", encoding="utf-8") as fh:
+            return fh.read()
+    except UnicodeDecodeError:
+        # フォールバック: エンコーディングエラーの場合は空文字を返す
+        return "ReconJP - ペネトレーションテスト用偵察ツール"
 
 # requirements.txtを読み込み
 def read_requirements():
-    with open("requirements.txt", "r", encoding="utf-8") as fh:
-        return [line.strip() for line in fh if line.strip() and not line.startswith("#")]
+    try:
+        with open("requirements.txt", "r", encoding="utf-8") as fh:
+            return [line.strip() for line in fh if line.strip() and not line.startswith("#")]
+    except UnicodeDecodeError:
+        # フォールバック: 基本的な依存関係を返す
+        return [
+            "requests>=2.31.0",
+            "dnspython>=2.4.2", 
+            "python-nmap>=0.7.1",
+            "beautifulsoup4>=4.12.2",
+            "colorama>=0.4.6",
+            "whois>=0.9.27"
+        ]
 
 setup(
     name="reconjp",
