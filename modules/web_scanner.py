@@ -79,7 +79,9 @@ class WebScanner:
                 protocols[f'{protocol}_url'] = url
             except requests.exceptions.RequestException as e:
                 protocols[f'{protocol}_status'] = None
+                # エラーメッセージは記録するが、技術スタックには含めない
                 protocols[f'{protocol}_error'] = str(e)
+                print(f"⚠️  {protocol.upper()}接続エラー: {str(e)}")
         
         self.results.update(protocols)
         return protocols
@@ -239,7 +241,9 @@ class WebScanner:
                 tech_stack['language'] = 'Python'
             
         except Exception as e:
-            tech_stack['error'] = str(e)
+            print(f"⚠️  技術スタック検出エラー: {str(e)}")
+            # エラーが発生した場合は空の辞書を返す
+            tech_stack = {}
         
         self.results['technology_stack'] = tech_stack
         return tech_stack
@@ -279,7 +283,7 @@ class WebScanner:
                 forms.append(form_info)
         
         except Exception as e:
-            print(f"フォーム分析エラー: {str(e)}")
+            print(f"⚠️  フォーム分析エラー: {str(e)}")
         
         self.results['forms'] = forms
         return forms
@@ -462,10 +466,12 @@ class WebScanner:
         # 技術スタック検出
         print("🛠️  技術スタック検出中...")
         tech_stack = self.technology_detection()
-        if tech_stack:
+        if tech_stack and len(tech_stack) > 0:
             print(f"✅ 検出された技術: {len(tech_stack)}種類")
             for tech, value in tech_stack.items():
                 print(f"   - {tech}: {value}")
+        else:
+            print("ℹ️  検出された技術スタックはありません")
         
         # ディレクトリ列挙
         print("📁 ディレクトリ列挙中...")
