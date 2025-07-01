@@ -136,26 +136,35 @@ class NetworkScanner:
     
     def run_full_network_scan(self):
         """完全なネットワークスキャンを実行"""
-        print(f"ネットワークスキャンを開始: {self.target}")
+        print(f"🔍 ネットワークスキャンを開始しています...")
         
         # IP解決
+        print("📍 IPアドレスを解決中...")
         ip = self.resolve_ip()
-        print(f"IPアドレス: {ip}")
+        print(f"✅ IPアドレス: {ip}")
         
         # ポートスキャン
-        print("ポートスキャンを実行中...")
+        print("🚪 ポートスキャンを実行中...")
         open_ports = self.port_scan(ip)
-        print(f"開いているポート: {open_ports}")
+        if open_ports:
+            print(f"✅ 開いているポート: {len(open_ports)}個")
+            for port in open_ports:
+                print(f"   - ポート {port}")
+        else:
+            print("ℹ️  開いているポートは見つかりませんでした")
         
         # サービス検出
         if open_ports:
-            print("サービス検出を実行中...")
+            print("🔧 サービス検出を実行中...")
             services = self.service_detection(ip, open_ports)
-            print(f"検出されたサービス: {services}")
+            print(f"✅ 検出されたサービス: {len(services)}個")
+            for port, service in services.items():
+                print(f"   - ポート {port}: {service}")
         
         # OS検出
-        print("OS検出を実行中...")
+        print("💻 OS検出を実行中...")
         os_info = self.os_detection(ip)
-        print(f"OS情報: {os_info}")
+        print(f"✅ OS情報: {os_info}")
         
+        print("🎉 ネットワークスキャンが完了しました！")
         return self.results 

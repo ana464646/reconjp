@@ -333,30 +333,58 @@ class WebScanner:
     
     def run_full_web_scan(self):
         """完全なWebスキャンを実行"""
-        print(f"Webアプリケーションスキャンを開始: {self.target}")
+        print(f"🌐 Webアプリケーションスキャンを開始しています...")
         
         # HTTP/HTTPS確認
-        print("HTTP/HTTPS状態を確認中...")
+        print("🌐 HTTP/HTTPS状態を確認中...")
         self.check_http_https()
+        if self.results.get('http_status') == 200:
+            print("✅ HTTP接続: 成功")
+        if self.results.get('https_status') == 200:
+            print("✅ HTTPS接続: 成功")
         
         # 技術スタック検出
-        print("技術スタック検出中...")
-        self.technology_detection()
+        print("🛠️  技術スタック検出中...")
+        tech_stack = self.technology_detection()
+        if tech_stack:
+            print(f"✅ 検出された技術: {len(tech_stack)}種類")
+            for tech, value in tech_stack.items():
+                print(f"   - {tech}: {value}")
         
         # ディレクトリ列挙
-        print("ディレクトリ列挙中...")
-        self.directory_enumeration()
+        print("📁 ディレクトリ列挙中...")
+        directories = self.directory_enumeration()
+        if directories:
+            print(f"✅ 検出されたディレクトリ: {len(directories)}個")
+        else:
+            print("ℹ️  検出されたディレクトリはありません")
         
         # ファイル列挙
-        print("ファイル列挙中...")
-        self.file_enumeration()
+        print("📄 ファイル列挙中...")
+        files = self.file_enumeration()
+        if files:
+            print(f"✅ 検出されたファイル: {len(files)}個")
+        else:
+            print("ℹ️  検出されたファイルはありません")
         
         # フォーム分析
-        print("フォーム分析中...")
-        self.form_analysis()
+        print("📝 フォーム分析中...")
+        forms = self.form_analysis()
+        if forms:
+            print(f"✅ 検出されたフォーム: {len(forms)}個")
+        else:
+            print("ℹ️  検出されたフォームはありません")
         
         # 脆弱性スキャン
-        print("脆弱性スキャン中...")
-        self.basic_vulnerability_scan()
+        print("⚠️  脆弱性スキャン中...")
+        vulnerabilities = self.basic_vulnerability_scan()
+        if vulnerabilities:
+            print(f"⚠️  検出された脆弱性: {len(vulnerabilities)}個")
+            for vuln in vulnerabilities:
+                severity_emoji = {"High": "🔴", "Medium": "🟡", "Low": "🟢"}.get(vuln.get('severity', 'Low'), "⚪")
+                print(f"   {severity_emoji} {vuln.get('type', 'Unknown')}")
+        else:
+            print("✅ 検出された脆弱性はありません")
         
+        print("🎉 Webアプリケーションスキャンが完了しました！")
         return self.results 

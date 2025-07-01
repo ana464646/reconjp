@@ -5,6 +5,7 @@
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 ReconJPは、WindowsとMac環境で動作する包括的なペネトレーションテスト用偵察ツールです。ネットワーク偵察、Webアプリケーション偵察、OSINT情報収集を統合し、効率的な情報収集を支援します。
+日本語で親しみのあるプログラムを目指しました。
 
 ## 🚀 主な機能
 
@@ -207,16 +208,6 @@ DNSレコードを取得中...
 - 一部の機能は外部APIに依存する場合があります
 - ファイアウォールやIDS/IPSによって検出される可能性があります
 - 大量のリクエストはターゲットシステムに負荷をかける可能性があります
-
-## 🤝 貢献
-
-プロジェクトへの貢献を歓迎します！
-
-1. このリポジトリをフォーク
-2. 機能ブランチを作成 (`git checkout -b feature/amazing-feature`)
-3. 変更をコミット (`git commit -m 'Add amazing feature'`)
-4. ブランチにプッシュ (`git push origin feature/amazing-feature`)
-5. プルリクエストを作成
 
 ## 📝 ライセンス
 

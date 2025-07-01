@@ -301,39 +301,73 @@ class OSINTGatherer:
     
     def run_full_osint_gathering(self):
         """完全なOSINT情報収集を実行"""
-        print(f"OSINT情報収集を開始: {self.target}")
+        print(f"📊 OSINT情報収集を開始しています...")
         
         # WHOIS情報
-        print("WHOIS情報を取得中...")
-        self.get_whois_info()
+        print("🏢 WHOIS情報を取得中...")
+        whois_info = self.get_whois_info()
+        if whois_info and whois_info.get('registrar'):
+            print(f"✅ レジストラ: {whois_info['registrar']}")
+        else:
+            print("ℹ️  WHOIS情報を取得できませんでした")
         
         # DNSレコード
-        print("DNSレコードを取得中...")
-        self.get_dns_records()
+        print("🌐 DNSレコードを取得中...")
+        dns_records = self.get_dns_records()
+        if dns_records:
+            total_records = sum(len(records) for records in dns_records.values() if records)
+            print(f"✅ DNSレコード: {total_records}個")
+        else:
+            print("ℹ️  DNSレコードを取得できませんでした")
         
         # サブドメイン列挙
-        print("サブドメイン列挙中...")
-        self.enumerate_subdomains()
+        print("🔗 サブドメイン列挙中...")
+        subdomains = self.enumerate_subdomains()
+        if subdomains:
+            print(f"✅ サブドメイン: {len(subdomains)}個")
+        else:
+            print("ℹ️  サブドメインは見つかりませんでした")
         
         # 逆引きDNS
-        print("逆引きDNS検索中...")
-        self.reverse_dns_lookup()
+        print("🔄 逆引きDNS検索中...")
+        reverse_dns = self.reverse_dns_lookup()
+        if reverse_dns:
+            print(f"✅ 逆引きDNS: {len(reverse_dns)}個")
+        else:
+            print("ℹ️  逆引きDNS情報を取得できませんでした")
         
         # 公開情報検索
-        print("公開情報を検索中...")
-        self.search_public_info()
+        print("🔍 公開情報を検索中...")
+        public_info = self.search_public_info()
+        if public_info:
+            print(f"✅ 公開情報: {len(public_info)}件")
+        else:
+            print("ℹ️  公開情報を取得できませんでした")
         
         # メールアドレス抽出
-        print("メールアドレスを抽出中...")
-        self.extract_email_addresses()
+        print("📧 メールアドレスを抽出中...")
+        emails = self.extract_email_addresses()
+        if emails:
+            print(f"✅ メールアドレス: {len(emails)}個")
+        else:
+            print("ℹ️  メールアドレスは見つかりませんでした")
         
         # ソーシャルメディア検索
-        print("ソーシャルメディアアカウントを検索中...")
-        self.find_social_media()
+        print("📱 ソーシャルメディアアカウントを検索中...")
+        social_media = self.find_social_media()
+        if social_media:
+            print(f"✅ ソーシャルメディア: {len(social_media)}個")
+        else:
+            print("ℹ️  ソーシャルメディアアカウントは見つかりませんでした")
         
         # SSL証明書情報
-        print("SSL証明書情報を取得中...")
+        print("🔒 SSL証明書情報を取得中...")
         ssl_info = self.check_ssl_certificate()
+        if ssl_info and 'error' not in ssl_info:
+            print("✅ SSL証明書情報を取得しました")
+        else:
+            print("ℹ️  SSL証明書情報を取得できませんでした")
         self.results['ssl_certificate'] = ssl_info
         
+        print("🎉 OSINT情報収集が完了しました！")
         return self.results 
