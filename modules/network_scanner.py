@@ -99,37 +99,66 @@ class NetworkScanner:
     def test_ssh_auth(self, ip, port=22):
         """SSH認証テスト"""
         print(f"🔐 SSH認証テストを開始: {ip}:{port}")
+        
+        # paramikoのログレベルを設定（詳細ログを抑制）
+        import logging
+        logging.getLogger("paramiko").setLevel(logging.WARNING)
+        
         ssh_results = {
             'anonymous_login': False,
             'successful_logins': [],
-            'failed_attempts': 0
+            'failed_attempts': 0,
+            'connection_errors': 0
         }
         
-        # 匿名ログイン試行
-        try:
-            ssh = paramiko.SSHClient()
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh.connect(ip, port=port, username='anonymous', password='', timeout=5)
-            ssh.close()
-            ssh_results['anonymous_login'] = True
-            print(f"✅ SSH匿名ログイン成功: {ip}:{port}")
-        except:
-            pass
-        
-        # ワードリストログイン試行
-        for username, password in self.common_credentials:
+        def try_ssh_connection(username, password, connection_type="normal"):
+            """SSH接続を試行するヘルパー関数"""
             try:
                 ssh = paramiko.SSHClient()
                 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                ssh.connect(ip, port=port, username=username, password=password, timeout=5)
+                
+                # 接続設定を調整
+                ssh.connect(
+                    ip, 
+                    port=port, 
+                    username=username, 
+                    password=password, 
+                    timeout=10,  # タイムアウトを延長
+                    banner_timeout=60,  # バナータイムアウトを設定
+                    auth_timeout=10,  # 認証タイムアウトを設定
+                    look_for_keys=False,  # キーベース認証を無効化
+                    allow_agent=False  # エージェント認証を無効化
+                )
                 ssh.close()
+                return True
+            except paramiko.ssh_exception.SSHException as e:
+                if "Error reading SSH protocol banner" in str(e):
+                    ssh_results['connection_errors'] += 1
+                    print(f"⚠️  SSH接続エラー ({connection_type}): プロトコルバナーの読み取りに失敗")
+                return False
+            except paramiko.ssh_exception.AuthenticationException:
+                # 認証失敗は正常な動作
+                return False
+            except Exception as e:
+                ssh_results['connection_errors'] += 1
+                print(f"⚠️  SSH接続エラー ({connection_type}): {str(e)}")
+                return False
+        
+        # 匿名ログイン試行
+        if try_ssh_connection('anonymous', '', "anonymous"):
+            ssh_results['anonymous_login'] = True
+            print(f"✅ SSH匿名ログイン成功: {ip}:{port}")
+        
+        # ワードリストログイン試行
+        for username, password in self.common_credentials:
+            if try_ssh_connection(username, password, f"{username}:{password}"):
                 ssh_results['successful_logins'].append({
                     'username': username,
                     'password': password,
                     'type': 'SSH'
                 })
                 print(f"✅ SSHログイン成功: {username}:{password} @ {ip}:{port}")
-            except:
+            else:
                 ssh_results['failed_attempts'] += 1
         
         return ssh_results
