@@ -90,16 +90,34 @@ class WebScanner:
             ('cisco', 'password'),
             ('juniper', 'juniper'),
             ('juniper', 'password'),
+            # Tomcat関連の認証情報
+            ('tomcat', 'tomcat'),
+            ('tomcat', 's3cret'),
+            ('tomcat', 'password'),
+            ('tomcat', 'admin'),
+            ('tomcat', 'manager'),
+            ('tomcat', ''),
+            ('manager', 'tomcat'),
+            ('manager', 's3cret'),
+            ('admin', 'tomcat'),
+            ('admin', 's3cret'),
+            ('root', 'tomcat'),
+            ('root', 's3cret'),
+            # 空の認証情報
             ('admin', ''),
             ('root', ''),
             ('user', ''),
             ('guest', ''),
             ('test', ''),
             ('demo', ''),
+            ('tomcat', ''),
+            ('manager', ''),
             ('', 'admin'),
             ('', 'password'),
             ('', '123456'),
             ('', 'root'),
+            ('', 'tomcat'),
+            ('', 's3cret'),
             ('', ''),
         ]
         
@@ -245,7 +263,17 @@ class WebScanner:
         def check_directory(dir_name):
             try:
                 url = f"{base_url}/{dir_name}"
-                response = requests.get(url, headers=self.headers, timeout=5, verify=False)
+                
+                # タイムアウト設定を調整
+                response = requests.get(
+                    url, 
+                    headers=self.headers, 
+                    timeout=(3, 10),  # 接続タイムアウト3秒、読み取りタイムアウト10秒
+                    verify=False,
+                    allow_redirects=True,
+                    max_retries=1
+                )
+                
                 if response.status_code in [200, 301, 302, 403]:
                     result = {
                         'name': dir_name,
@@ -269,8 +297,18 @@ class WebScanner:
                     
                     return result
                 return None
+                
+            except requests.exceptions.ConnectTimeout:
+                # 接続タイムアウトの場合は静かにスキップ
+                return None
+            except requests.exceptions.ReadTimeout:
+                # 読み取りタイムアウトの場合は静かにスキップ
+                return None
+            except requests.exceptions.ConnectionError:
+                # 接続エラーの場合は静かにスキップ
+                return None
             except Exception as e:
-                print(f"⚠️  ディレクトリチェックエラー ({dir_name}): {str(e)}")
+                # すべてのエラーを静かにスキップ
                 return None
         
         print(f"🔍 ディレクトリ列挙を開始: {base_url}")
@@ -319,7 +357,17 @@ class WebScanner:
         def check_file(file_name):
             try:
                 url = f"{base_url}/{file_name}"
-                response = requests.get(url, headers=self.headers, timeout=5, verify=False)
+                
+                # タイムアウト設定を調整
+                response = requests.get(
+                    url, 
+                    headers=self.headers, 
+                    timeout=(3, 10),  # 接続タイムアウト3秒、読み取りタイムアウト10秒
+                    verify=False,
+                    allow_redirects=True,
+                    max_retries=1
+                )
+                
                 if response.status_code in [200, 301, 302]:
                     return {
                         'name': file_name,
@@ -328,7 +376,14 @@ class WebScanner:
                         'size': len(response.content)
                     }
                 return None
-            except:
+                
+            except (requests.exceptions.ConnectTimeout, 
+                    requests.exceptions.ReadTimeout, 
+                    requests.exceptions.ConnectionError):
+                # タイムアウト・接続エラーの場合は静かにスキップ
+                return None
+            except Exception as e:
+                # すべてのエラーを静かにスキップ
                 return None
         
         print(f"ファイル列挙を開始: {base_url}")
@@ -895,13 +950,25 @@ class WebScanner:
     def detect_basic_auth(self, url):
         """Basic認証の検出"""
         try:
-            response = requests.get(url, headers=self.headers, timeout=5, verify=False)
+            response = requests.get(
+                url, 
+                headers=self.headers, 
+                timeout=(3, 10),  # 接続タイムアウト3秒、読み取りタイムアウト10秒
+                verify=False,
+                allow_redirects=True,
+                max_retries=1
+            )
             if response.status_code == 401:
                 auth_header = response.headers.get('WWW-Authenticate', '')
                 if 'Basic' in auth_header:
                     return True, auth_header
             return False, None
-        except:
+        except (requests.exceptions.ConnectTimeout, 
+                requests.exceptions.ReadTimeout, 
+                requests.exceptions.ConnectionError):
+            return False, None
+        except Exception as e:
+            # すべてのエラーを静かにスキップ
             return False, None
     
     def basic_auth_bruteforce(self, url, realm=None):
@@ -920,7 +987,15 @@ class WebScanner:
             try:
                 from requests.auth import HTTPBasicAuth
                 auth = HTTPBasicAuth(username, password)
-                response = requests.get(url, auth=auth, headers=self.headers, timeout=5, verify=False)
+                response = requests.get(
+                    url, 
+                    auth=auth, 
+                    headers=self.headers, 
+                    timeout=(3, 10),  # 接続タイムアウト3秒、読み取りタイムアウト10秒
+                    verify=False,
+                    allow_redirects=True,
+                    max_retries=1
+                )
                 
                 if response.status_code == 200:
                     return {
@@ -931,7 +1006,12 @@ class WebScanner:
                         'title': self.extract_title(response.text)
                     }
                 return None
+            except (requests.exceptions.ConnectTimeout, 
+                    requests.exceptions.ReadTimeout, 
+                    requests.exceptions.ConnectionError):
+                return None
             except Exception as e:
+                # すべてのエラーを静かにスキップ
                 return None
         
         print(f"   📋 試行回数: {len(self.auth_credentials)}回")
@@ -981,7 +1061,12 @@ class WebScanner:
             'webmin', 'phpmyadmin', 'mysql', 'database',
             'backup', 'config', 'setup', 'install',
             'maintenance', 'monitor', 'status', 'health',
-            'logs', 'debug', 'test', 'dev', 'staging'
+            'logs', 'debug', 'test', 'dev', 'staging',
+            # Tomcat関連のディレクトリ
+            'manager', 'host-manager', 'tomcat', 'tomcat-manager',
+            'webapps', 'examples', 'docs', 'ROOT',
+            'manager-gui', 'manager-script', 'manager-jmx', 'manager-status',
+            'host-manager-gui', 'host-manager-script'
         ]
         
         auth_found = []
@@ -1011,7 +1096,7 @@ class WebScanner:
                     return result
                 return None
             except Exception as e:
-                print(f"⚠️  ディレクトリチェックエラー ({dir_name}): {str(e)}")
+                # すべてのエラーを静かにスキップ
                 return None
         
         print(f"   📋 スキャン対象: {len(auth_directories)}個のディレクトリ")
