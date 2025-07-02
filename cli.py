@@ -503,9 +503,9 @@ def main():
                         print(f"    ... 他 {len(vulnerabilities) - 3}個")
                 
                 # 脆弱性スキャン結果の表示
-                if web_results.get('vulnerabilities'):
+                if web_data.get('vulnerabilities'):
                     print(f"\n🔍 脆弱性スキャン結果:")
-                    for vuln in web_results['vulnerabilities']:
+                    for vuln in web_data['vulnerabilities']:
                         severity_emoji = {
                             'High': '🔴',
                             'Medium': '🟡', 
