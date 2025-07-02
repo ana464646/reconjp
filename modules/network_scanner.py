@@ -176,46 +176,80 @@ class NetworkScanner:
         def explore_ftp_contents(ftp, login_type):
             """FTPサーバーの内容を探索"""
             try:
+                # FTP接続のタイムアウト設定を調整
+                ftp.sock.settimeout(30)  # 30秒に延長
+                
                 # 現在のディレクトリのファイル一覧を取得
                 files = []
                 directories = []
                 
-                ftp.retrlines('LIST', lambda x: files.append(x))
+                print(f"   📋 ファイル一覧を取得中...")
+                
+                # タイムアウト付きでファイル一覧を取得
+                try:
+                    ftp.retrlines('LIST', lambda x: files.append(x), timeout=30)
+                except Exception as list_error:
+                    print(f"   ⚠️  ファイル一覧取得エラー: {str(list_error)}")
+                    # 部分的な情報でも表示
+                    return {
+                        'files': [],
+                        'directories': [],
+                        'total_files': 0,
+                        'total_directories': 0,
+                        'error': f"ファイル一覧取得に失敗: {str(list_error)}"
+                    }
+                
+                print(f"   ✅ {len(files)}個のエントリを取得")
+                
+                # ファイル情報を解析
+                parsed_files = []
+                parsed_directories = []
                 
                 for file_info in files:
-                    parts = file_info.split()
-                    if len(parts) >= 9:
-                        permissions = parts[0]
-                        size = parts[4]
-                        date = ' '.join(parts[5:8])
-                        name = ' '.join(parts[8:])
-                        
-                        if permissions.startswith('d'):
-                            directories.append({
-                                'name': name,
-                                'type': 'directory',
-                                'permissions': permissions,
-                                'size': size,
-                                'date': date
-                            })
-                        else:
-                            files.append({
-                                'name': name,
-                                'type': 'file',
-                                'permissions': permissions,
-                                'size': size,
-                                'date': date
-                            })
+                    try:
+                        parts = file_info.split()
+                        if len(parts) >= 9:
+                            permissions = parts[0]
+                            size = parts[4]
+                            date = ' '.join(parts[5:8])
+                            name = ' '.join(parts[8:])
+                            
+                            if permissions.startswith('d'):
+                                parsed_directories.append({
+                                    'name': name,
+                                    'type': 'directory',
+                                    'permissions': permissions,
+                                    'size': size,
+                                    'date': date
+                                })
+                            else:
+                                parsed_files.append({
+                                    'name': name,
+                                    'type': 'file',
+                                    'permissions': permissions,
+                                    'size': size,
+                                    'date': date
+                                })
+                    except Exception as parse_error:
+                        print(f"   ⚠️  ファイル情報解析エラー: {str(parse_error)}")
+                        continue
                 
                 return {
-                    'files': files,
-                    'directories': directories,
-                    'total_files': len(files),
-                    'total_directories': len(directories)
+                    'files': parsed_files,
+                    'directories': parsed_directories,
+                    'total_files': len(parsed_files),
+                    'total_directories': len(parsed_directories)
                 }
+                
             except Exception as e:
                 print(f"⚠️  FTP内容探索エラー: {str(e)}")
-                return None
+                return {
+                    'files': [],
+                    'directories': [],
+                    'total_files': 0,
+                    'total_directories': 0,
+                    'error': str(e)
+                }
         
         # 匿名ログイン試行
         try:
@@ -284,8 +318,26 @@ class NetworkScanner:
     def display_ftp_contents(self, contents, login_type):
         """FTP内容を表示"""
         print(f"\n📁 FTPサーバー内容 ({login_type}):")
+        
+        # エラーがある場合は表示
+        if 'error' in contents:
+            print(f"   ❌ エラー: {contents['error']}")
+            print(f"   💡 対処法:")
+            print(f"      - ネットワーク接続を確認してください")
+            print(f"      - FTPサーバーの状態を確認してください")
+            print(f"      - ファイアウォールの設定を確認してください")
+            print("-" * 50)
+            return
+        
         print(f"   📊 総ファイル数: {contents['total_files']}")
         print(f"   📁 総ディレクトリ数: {contents['total_directories']}")
+        
+        if contents['total_files'] == 0 and contents['total_directories'] == 0:
+            print(f"   ℹ️  ファイルやディレクトリが見つかりませんでした")
+            print(f"   💡 可能性:")
+            print(f"      - 空のディレクトリ")
+            print(f"      - アクセス権限の制限")
+            print(f"      - サーバーの設定")
         
         if contents['directories']:
             print(f"\n📁 ディレクトリ一覧:")
