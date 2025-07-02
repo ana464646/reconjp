@@ -198,6 +198,8 @@ class WebScanner:
             'maintenance1', 'maintenance2', 'repair1', 'repair2', 'fix1', 'fix2',
             'error1', 'error2', 'status1', 'status2', 'health1', 'health2',
             'monitor1', 'monitor2', 'stats1', 'stats2', 'analytics1', 'analytics2',
+            # Tomcat関連のディレクトリ
+            'manager', 'manager/html', 'host-manager', 'host-manager/html',
             'log1', 'log2', 'audit1', 'audit2', 'security1', 'security2',
             'firewall1', 'firewall2', 'waf1', 'waf2', 'ids1', 'ids2',
             'honeypot1', 'honeypot2', 'trap1', 'trap2'
@@ -211,8 +213,9 @@ class WebScanner:
             'README.md', 'CHANGELOG.txt', 'LICENSE.txt'
         ]
         
-        # よくあるサブドメイン（Webサイト用）
+        # よくあるサブドメイン（Webサイト用）- 最適化版
         self.common_subdomains = [
+            # 基本的なサブドメイン
             'www', 'mail', 'ftp', 'admin', 'blog', 'dev', 'test', 'stage',
             'api', 'cdn', 'static', 'img', 'images', 'media', 'support',
             'help', 'docs', 'forum', 'shop', 'store', 'app', 'mobile',
@@ -222,7 +225,96 @@ class WebScanner:
             'dashboard', 'panel', 'control', 'manage', 'portal',
             'secure', 'ssl', 'login', 'auth', 'account', 'user',
             'billing', 'payment', 'order', 'cart', 'checkout',
-            'news', 'press', 'about', 'contact', 'careers', 'jobs'
+            'news', 'press', 'about', 'contact', 'careers', 'jobs',
+            # 追加の一般的なサブドメイン
+            'm', 'mobile', 'wap', 'i', 'internal', 'intranet', 'corp',
+            'office', 'work', 'staff', 'employee', 'hr', 'finance',
+            'marketing', 'sales', 'support', 'helpdesk', 'ticket',
+            'status', 'monitor', 'health', 'metrics', 'analytics',
+            'stats', 'report', 'backup', 'archive', 'old', 'legacy',
+            'beta', 'alpha', 'staging', 'dev', 'development', 'qa',
+            'test', 'testing', 'demo', 'sandbox', 'playground',
+            'lab', 'labs', 'research', 'study', 'academic',
+            'student', 'faculty', 'staff', 'alumni', 'library',
+            'cms', 'admin', 'administrator', 'manage', 'management',
+            'control', 'console', 'panel', 'dashboard', 'portal',
+            'webadmin', 'siteadmin', 'master', 'super', 'root',
+            'system', 'sys', 'server', 'host', 'node', 'cluster',
+            'loadbalancer', 'lb', 'proxy', 'gateway', 'router',
+            'firewall', 'fw', 'ids', 'ips', 'waf', 'security',
+            'ssl', 'cert', 'ca', 'pki', 'ldap', 'ad', 'domain',
+            'dns', 'dhcp', 'ntp', 'time', 'log', 'logs', 'audit',
+            'monitor', 'monitoring', 'nagios', 'zabbix', 'icinga',
+            'prometheus', 'grafana', 'kibana', 'elasticsearch',
+            'database', 'db', 'mysql', 'postgres', 'oracle', 'sql',
+            'redis', 'memcached', 'cache', 'session', 'temp', 'tmp',
+            'upload', 'download', 'file', 'files', 'storage', 's3',
+            'bucket', 'cdn', 'static', 'assets', 'media', 'img',
+            'image', 'photo', 'video', 'audio', 'stream', 'live',
+            'broadcast', 'tv', 'radio', 'podcast', 'webinar',
+            'meeting', 'conference', 'chat', 'irc', 'xmpp', 'sip',
+            'voip', 'phone', 'fax', 'sms', 'mms', 'push', 'notify',
+            'alert', 'warning', 'error', 'debug', 'trace', 'log',
+            'syslog', 'rsyslog', 'journald', 'systemd', 'init',
+            'service', 'daemon', 'process', 'thread', 'worker',
+            'job', 'task', 'queue', 'cron', 'scheduler', 'batch',
+            'etl', 'data', 'warehouse', 'lake', 'stream', 'kafka',
+            'rabbitmq', 'activemq', 'zeromq', 'nats', 'grpc',
+            'rest', 'soap', 'xml', 'json', 'api', 'apis', 'swagger',
+            'openapi', 'graphql', 'websocket', 'socket', 'tcp',
+            'udp', 'http', 'https', 'ftp', 'sftp', 'scp', 'rsync',
+            'git', 'svn', 'hg', 'cvs', 'repo', 'repository', 'code',
+            'source', 'bin', 'build', 'compile', 'deploy', 'release',
+            'version', 'tag', 'branch', 'merge', 'pull', 'push',
+            'commit', 'diff', 'patch', 'hotfix', 'bugfix', 'feature',
+            'milestone', 'sprint', 'iteration', 'backlog', 'kanban',
+            'scrum', 'agile', 'waterfall', 'v-model', 'spiral',
+            'prototype', 'mockup', 'wireframe', 'design', 'ui', 'ux',
+            'frontend', 'backend', 'fullstack', 'devops', 'sre',
+            'platform', 'infrastructure', 'cloud', 'aws', 'azure',
+            'gcp', 'digitalocean', 'linode', 'vultr', 'heroku',
+            'netlify', 'vercel', 'github', 'gitlab', 'bitbucket',
+            'jira', 'confluence', 'trello', 'asana', 'slack',
+            'teams', 'discord', 'zoom', 'meet', 'webex', 'skype',
+            'telegram', 'whatsapp', 'signal', 'matrix', 'mattermost',
+            'rocket', 'chat', 'zulip', 'irc', 'xmpp', 'sip', 'h323',
+            'rtp', 'rtcp', 'srtp', 'zrtp', 'dtls', 'tls', 'ssl',
+            'ssh', 'telnet', 'rsh', 'rlogin', 'rexec', 'finger',
+            'whois', 'nslookup', 'dig', 'host', 'ping', 'traceroute',
+            'mtr', 'nmap', 'masscan', 'zmap', 'unicornscan', 'amap',
+            'nikto', 'dirb', 'gobuster', 'wfuzz', 'sqlmap', 'nuclei',
+            'metasploit', 'nmap', 'wireshark', 'tcpdump', 'tshark',
+            'netcat', 'socat', 'netstat', 'ss', 'lsof', 'fuser',
+            'ps', 'top', 'htop', 'iotop', 'iftop', 'nethogs',
+            'wget', 'curl', 'lynx', 'links', 'elinks', 'w3m',
+            'firefox', 'chrome', 'safari', 'edge', 'opera', 'brave',
+            'tor', 'vpn', 'proxy', 'socks', 'http', 'https', 'ftp',
+            'sftp', 'scp', 'rsync', 'git', 'svn', 'hg', 'cvs',
+            'repo', 'repository', 'code', 'source', 'bin', 'build',
+            'compile', 'deploy', 'release', 'version', 'tag',
+            'branch', 'merge', 'pull', 'push', 'commit', 'diff',
+            'patch', 'hotfix', 'bugfix', 'feature', 'milestone',
+            'sprint', 'iteration', 'backlog', 'kanban', 'scrum',
+            'agile', 'waterfall', 'v-model', 'spiral', 'prototype',
+            'mockup', 'wireframe', 'design', 'ui', 'ux', 'frontend',
+            'backend', 'fullstack', 'devops', 'sre', 'platform',
+            'infrastructure', 'cloud', 'aws', 'azure', 'gcp',
+            'digitalocean', 'linode', 'vultr', 'heroku', 'netlify',
+            'vercel', 'github', 'gitlab', 'bitbucket', 'jira',
+            'confluence', 'trello', 'asana', 'slack', 'teams',
+            'discord', 'zoom', 'meet', 'webex', 'skype', 'telegram',
+            'whatsapp', 'signal', 'matrix', 'mattermost', 'rocket',
+            'chat', 'zulip', 'irc', 'xmpp', 'sip', 'h323', 'rtp',
+            'rtcp', 'srtp', 'zrtp', 'dtls', 'tls', 'ssl', 'ssh',
+            'telnet', 'rsh', 'rlogin', 'rexec', 'finger', 'whois',
+            'nslookup', 'dig', 'host', 'ping', 'traceroute', 'mtr',
+            'nmap', 'masscan', 'zmap', 'unicornscan', 'amap', 'nikto',
+            'dirb', 'gobuster', 'wfuzz', 'sqlmap', 'nuclei', 'metasploit',
+            'wireshark', 'tcpdump', 'tshark', 'netcat', 'socat',
+            'netstat', 'ss', 'lsof', 'fuser', 'ps', 'top', 'htop',
+            'iotop', 'iftop', 'nethogs', 'wget', 'curl', 'lynx',
+            'links', 'elinks', 'w3m', 'firefox', 'chrome', 'safari',
+            'edge', 'opera', 'brave', 'tor', 'vpn', 'proxy', 'socks'
         ]
     
     def check_http_https(self):
@@ -781,10 +873,17 @@ class WebScanner:
             try:
                 full_domain = f"{subdomain}.{self.target}"
                 
-                # HTTPでチェック
+                # HTTPでチェック（タイムアウト短縮）
                 http_url = f"http://{full_domain}"
                 try:
-                    response = requests.get(http_url, headers=self.headers, timeout=5, verify=False)
+                    response = requests.get(
+                        http_url, 
+                        headers=self.headers, 
+                        timeout=(2, 5),  # 接続2秒、読み取り5秒
+                        verify=False,
+                        allow_redirects=True,
+                        max_retries=1
+                    )
                     if response.status_code in [200, 301, 302, 403]:
                         return {
                             'subdomain': full_domain,
@@ -794,13 +893,24 @@ class WebScanner:
                             'server': response.headers.get('Server', 'Unknown'),
                             'url': http_url
                         }
-                except:
+                except (requests.exceptions.ConnectTimeout, 
+                        requests.exceptions.ReadTimeout, 
+                        requests.exceptions.ConnectionError):
+                    pass
+                except Exception:
                     pass
                 
-                # HTTPSでチェック
+                # HTTPSでチェック（タイムアウト短縮）
                 https_url = f"https://{full_domain}"
                 try:
-                    response = requests.get(https_url, headers=self.headers, timeout=5, verify=False)
+                    response = requests.get(
+                        https_url, 
+                        headers=self.headers, 
+                        timeout=(2, 5),  # 接続2秒、読み取り5秒
+                        verify=False,
+                        allow_redirects=True,
+                        max_retries=1
+                    )
                     if response.status_code in [200, 301, 302, 403]:
                         return {
                             'subdomain': full_domain,
@@ -810,23 +920,39 @@ class WebScanner:
                             'server': response.headers.get('Server', 'Unknown'),
                             'url': https_url
                         }
-                except:
+                except (requests.exceptions.ConnectTimeout, 
+                        requests.exceptions.ReadTimeout, 
+                        requests.exceptions.ConnectionError):
+                    pass
+                except Exception:
                     pass
                 
                 return None
-            except:
+            except Exception:
                 return None
         
         print(f"🔗 サブドメイン列挙を開始: {self.target}")
+        print(f"   📋 検索対象: {len(self.common_subdomains)}個のサブドメイン")
+        print(f"   ⚡ 並列処理: 50ワーカー")
         
-        with ThreadPoolExecutor(max_workers=20) as executor:
+        # 並列処理数を増加（20 → 50）
+        with ThreadPoolExecutor(max_workers=50) as executor:
             future_to_subdomain = {executor.submit(check_subdomain, subdomain): subdomain for subdomain in self.common_subdomains}
             
+            completed_count = 0
             for future in as_completed(future_to_subdomain):
+                completed_count += 1
                 result = future.result()
                 if result:
                     found_subdomains.append(result)
                     print(f"✅ サブドメイン発見: {result['subdomain']} ({result['protocol']}) - {result['title']}")
+                
+                # 進捗表示（10個ごと）
+                if completed_count % 10 == 0:
+                    progress = (completed_count / len(self.common_subdomains)) * 100
+                    print(f"   📊 進捗: {completed_count}/{len(self.common_subdomains)} ({progress:.1f}%)")
+        
+        print(f"   🎯 完了: {len(found_subdomains)}個のサブドメインを発見")
         
         self.results['subdomains'] = found_subdomains
         return found_subdomains
