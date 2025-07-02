@@ -169,8 +169,53 @@ class NetworkScanner:
         ftp_results = {
             'anonymous_login': False,
             'successful_logins': [],
-            'failed_attempts': 0
+            'failed_attempts': 0,
+            'ftp_contents': {}
         }
+        
+        def explore_ftp_contents(ftp, login_type):
+            """FTPサーバーの内容を探索"""
+            try:
+                # 現在のディレクトリのファイル一覧を取得
+                files = []
+                directories = []
+                
+                ftp.retrlines('LIST', lambda x: files.append(x))
+                
+                for file_info in files:
+                    parts = file_info.split()
+                    if len(parts) >= 9:
+                        permissions = parts[0]
+                        size = parts[4]
+                        date = ' '.join(parts[5:8])
+                        name = ' '.join(parts[8:])
+                        
+                        if permissions.startswith('d'):
+                            directories.append({
+                                'name': name,
+                                'type': 'directory',
+                                'permissions': permissions,
+                                'size': size,
+                                'date': date
+                            })
+                        else:
+                            files.append({
+                                'name': name,
+                                'type': 'file',
+                                'permissions': permissions,
+                                'size': size,
+                                'date': date
+                            })
+                
+                return {
+                    'files': files,
+                    'directories': directories,
+                    'total_files': len(files),
+                    'total_directories': len(directories)
+                }
+            except Exception as e:
+                print(f"⚠️  FTP内容探索エラー: {str(e)}")
+                return None
         
         # 匿名ログイン試行
         try:
@@ -179,6 +224,14 @@ class NetworkScanner:
             ftp.login('anonymous', 'anonymous@example.com')
             ftp_results['anonymous_login'] = True
             print(f"✅ FTP匿名ログイン成功: {ip}:{port}")
+            
+            # FTP内容を探索
+            print("🔍 FTPサーバーの内容を探索中...")
+            contents = explore_ftp_contents(ftp, "anonymous")
+            if contents:
+                ftp_results['ftp_contents']['anonymous'] = contents
+                self.display_ftp_contents(contents, "匿名ログイン")
+            
             ftp.quit()
         except:
             pass
@@ -190,6 +243,14 @@ class NetworkScanner:
             ftp.login('anonymous', '')
             ftp_results['anonymous_login'] = True
             print(f"✅ FTP匿名ログイン成功（空パスワード）: {ip}:{port}")
+            
+            # FTP内容を探索
+            print("🔍 FTPサーバーの内容を探索中...")
+            contents = explore_ftp_contents(ftp, "anonymous_empty")
+            if contents:
+                ftp_results['ftp_contents']['anonymous_empty'] = contents
+                self.display_ftp_contents(contents, "匿名ログイン（空パスワード）")
+            
             ftp.quit()
         except:
             pass
@@ -206,33 +267,70 @@ class NetworkScanner:
                     'type': 'FTP'
                 })
                 print(f"✅ FTPログイン成功: {username}:{password} @ {ip}:{port}")
+                
+                # FTP内容を探索
+                print(f"🔍 FTPサーバーの内容を探索中... ({username})")
+                contents = explore_ftp_contents(ftp, f"{username}:{password}")
+                if contents:
+                    ftp_results['ftp_contents'][f"{username}:{password}"] = contents
+                    self.display_ftp_contents(contents, f"{username}:{password}")
+                
                 ftp.quit()
             except:
                 ftp_results['failed_attempts'] += 1
         
         return ftp_results
     
-    def run_auth_tests(self, ip, open_ports):
-        """認証テストを実行"""
-        auth_results = {}
+    def display_ftp_contents(self, contents, login_type):
+        """FTP内容を表示"""
+        print(f"\n📁 FTPサーバー内容 ({login_type}):")
+        print(f"   📊 総ファイル数: {contents['total_files']}")
+        print(f"   📁 総ディレクトリ数: {contents['total_directories']}")
         
-        # SSHポート（22）が開いている場合
-        if 22 in open_ports:
-            print("🔐 SSH認証テストを実行中...")
-            auth_results['ssh'] = self.test_ssh_auth(ip, 22)
+        if contents['directories']:
+            print(f"\n📁 ディレクトリ一覧:")
+            for directory in contents['directories']:
+                print(f"   📁 {directory['name']}")
+                print(f"      🔐 権限: {directory['permissions']}")
+                print(f"      📅 日付: {directory['date']}")
         
-        # FTPポート（21）が開いている場合
-        if 21 in open_ports:
-            print("📁 FTP認証テストを実行中...")
-            auth_results['ftp'] = self.test_ftp_auth(ip, 21)
+        if contents['files']:
+            print(f"\n📄 ファイル一覧:")
+            for file in contents['files']:
+                # ファイルサイズを読みやすい形式に変換
+                size = int(file['size']) if file['size'].isdigit() else 0
+                if size < 1024:
+                    size_str = f"{size} B"
+                elif size < 1024 * 1024:
+                    size_str = f"{size // 1024} KB"
+                else:
+                    size_str = f"{size // (1024 * 1024)} MB"
+                
+                print(f"   📄 {file['name']}")
+                print(f"      📏 サイズ: {size_str}")
+                print(f"      🔐 権限: {file['permissions']}")
+                print(f"      📅 日付: {file['date']}")
+                
+                # 重要なファイルの検出
+                important_files = [
+                    'config', 'conf', 'ini', 'cfg', 'xml', 'json', 'yaml', 'yml',
+                    'log', 'txt', 'md', 'readme', 'license', 'backup', 'bak',
+                    'sql', 'db', 'database', 'password', 'passwd', 'shadow',
+                    'ssh', 'key', 'cert', 'pem', 'crt', 'p12', 'pfx',
+                    'env', 'environment', 'secret', 'private', 'admin'
+                ]
+                
+                file_lower = file['name'].lower()
+                if any(keyword in file_lower for keyword in important_files):
+                    print(f"      ⚠️  重要ファイルの可能性")
         
-        # SFTPポート（2222）が開いている場合
-        if 2222 in open_ports:
-            print("🔐 SFTP認証テストを実行中...")
-            auth_results['sftp'] = self.test_ssh_auth(ip, 2222)
-        
-        self.results['auth_tests'] = auth_results
-        return auth_results
+        print("-" * 50)
+    
+    def run_ftp_auth_test(self, ip):
+        """FTP認証テストのみ実行"""
+        ftp_results = self.test_ftp_auth(ip, 21)
+        self.results['auth_tests'] = {'ftp': ftp_results}
+        return ftp_results
     
     def port_scan(self, ip=None, ports=None):
         """ポートスキャンを実行"""
@@ -356,19 +454,18 @@ class NetworkScanner:
             for port, service in services.items():
                 print(f"   - ポート {port}: {service}")
         
-        # 認証テスト（SSH/FTPポートが開いている場合）
-        if open_ports and (21 in open_ports or 22 in open_ports or 2222 in open_ports):
-            print("🔐 認証テストを実行中...")
-            auth_results = self.run_auth_tests(ip, open_ports)
+        # FTP認証テストのみ実行（SSH認証テストは除外）
+        if open_ports and 21 in open_ports:
+            print("📁 FTP認証テストを実行中...")
+            auth_results = self.run_ftp_auth_test(ip)
             
-            # 認証テスト結果の表示
-            for service, results in auth_results.items():
-                if results['anonymous_login']:
-                    print(f"⚠️  {service.upper()}匿名ログインが可能です")
-                if results['successful_logins']:
-                    print(f"⚠️  {service.upper()}で{len(results['successful_logins'])}個の認証情報が有効です")
-                    for login in results['successful_logins']:
-                        print(f"   - {login['username']}:{login['password']}")
+            # FTP認証テスト結果の表示
+            if auth_results['anonymous_login']:
+                print(f"⚠️  FTP匿名ログインが可能です")
+            if auth_results['successful_logins']:
+                print(f"⚠️  FTPで{len(auth_results['successful_logins'])}個の認証情報が有効です")
+                for login in auth_results['successful_logins']:
+                    print(f"   - {login['username']}:{login['password']}")
         
         # OS検出
         print("💻 OS検出を実行中...")
