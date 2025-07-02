@@ -318,22 +318,49 @@ class WebScanner:
         ]
     
     def check_http_https(self):
-        """HTTP/HTTPSの状態を確認"""
+        """HTTP/HTTPSの状態を確認（ポート8080も含む）"""
         protocols = {}
         
-        for protocol in ['http', 'https']:
-            url = f"{protocol}://{self.target}"
+        # 標準ポート（80, 443）とポート8080をテスト
+        test_configs = [
+            ('http', 80),
+            ('https', 443),
+            ('http', 8080),
+            ('https', 8080)
+        ]
+        
+        for protocol, port in test_configs:
+            if port == 80:
+                url = f"{protocol}://{self.target}"
+                key_prefix = protocol
+            elif port == 443:
+                url = f"{protocol}://{self.target}"
+                key_prefix = protocol
+            else:
+                url = f"{protocol}://{self.target}:{port}"
+                key_prefix = f"{protocol}_{port}"
+            
             try:
                 response = requests.get(url, headers=self.headers, timeout=self.timeout, verify=False)
-                protocols[f'{protocol}_status'] = response.status_code
-                protocols[f'{protocol}_headers'] = dict(response.headers)
-                protocols[f'{protocol}_server'] = response.headers.get('Server', 'Unknown')
-                protocols[f'{protocol}_url'] = url
+                protocols[f'{key_prefix}_status'] = response.status_code
+                protocols[f'{key_prefix}_headers'] = dict(response.headers)
+                protocols[f'{key_prefix}_server'] = response.headers.get('Server', 'Unknown')
+                protocols[f'{key_prefix}_url'] = url
+                protocols[f'{key_prefix}_title'] = self.extract_title(response.text)
+                
+                # ポート8080でアクセス可能な場合の特別な表示
+                if port == 8080 and response.status_code in [200, 301, 302]:
+                    print(f"✅ ポート8080で{protocol.upper()}アクセス可能: {url}")
+                    print(f"   📄 タイトル: {protocols[f'{key_prefix}_title']}")
+                    print(f"   🖥️  サーバー: {protocols[f'{key_prefix}_server']}")
+                    print(f"   📊 ステータス: {response.status_code}")
+                
             except requests.exceptions.RequestException as e:
-                protocols[f'{protocol}_status'] = None
-                # エラーメッセージは記録するが、技術スタックには含めない
-                protocols[f'{protocol}_error'] = str(e)
-                print(f"⚠️  {protocol.upper()}接続エラー: {str(e)}")
+                protocols[f'{key_prefix}_status'] = None
+                protocols[f'{key_prefix}_error'] = str(e)
+                # ポート8080のエラーのみ表示（標準ポートは静かにスキップ）
+                if port == 8080:
+                    print(f"⚠️  ポート8080 {protocol.upper()}接続エラー: {str(e)}")
         
         self.results.update(protocols)
         return protocols
@@ -341,8 +368,12 @@ class WebScanner:
     def directory_enumeration(self, base_url=None):
         """ディレクトリ列挙（隠しディレクトリ検出含む）"""
         if base_url is None:
-            # HTTP/HTTPSの状態に基づいてベースURLを決定
-            if self.results.get('https_status') == 200:
+            # HTTP/HTTPSの状態に基づいてベースURLを決定（ポート8080も含む）
+            if self.results.get('https_8080_status') == 200:
+                base_url = f"https://{self.target}:8080"
+            elif self.results.get('http_8080_status') == 200:
+                base_url = f"http://{self.target}:8080"
+            elif self.results.get('https_status') == 200:
                 base_url = f"https://{self.target}"
             elif self.results.get('http_status') == 200:
                 base_url = f"http://{self.target}"
@@ -437,7 +468,11 @@ class WebScanner:
     def file_enumeration(self, base_url=None):
         """ファイル列挙"""
         if base_url is None:
-            if self.results.get('https_status') == 200:
+            if self.results.get('https_8080_status') == 200:
+                base_url = f"https://{self.target}:8080"
+            elif self.results.get('http_8080_status') == 200:
+                base_url = f"http://{self.target}:8080"
+            elif self.results.get('https_status') == 200:
                 base_url = f"https://{self.target}"
             elif self.results.get('http_status') == 200:
                 base_url = f"http://{self.target}"
@@ -495,7 +530,11 @@ class WebScanner:
     def technology_detection(self, url=None):
         """技術スタック検出"""
         if url is None:
-            if self.results.get('https_status') == 200:
+            if self.results.get('https_8080_status') == 200:
+                url = f"https://{self.target}:8080"
+            elif self.results.get('http_8080_status') == 200:
+                url = f"http://{self.target}:8080"
+            elif self.results.get('https_status') == 200:
                 url = f"https://{self.target}"
             elif self.results.get('http_status') == 200:
                 url = f"http://{self.target}"
@@ -614,7 +653,11 @@ class WebScanner:
     def basic_vulnerability_scan(self, url=None):
         """基本的な脆弱性スキャン（CVE番号付き）"""
         if url is None:
-            if self.results.get('https_status') == 200:
+            if self.results.get('https_8080_status') == 200:
+                url = f"https://{self.target}:8080"
+            elif self.results.get('http_8080_status') == 200:
+                url = f"http://{self.target}:8080"
+            elif self.results.get('https_status') == 200:
                 url = f"https://{self.target}"
             elif self.results.get('http_status') == 200:
                 url = f"http://{self.target}"
@@ -1169,7 +1212,11 @@ class WebScanner:
     def scan_basic_auth_directories(self, base_url=None):
         """Basic認証が必要なディレクトリのスキャン"""
         if base_url is None:
-            if self.results.get('https_status') == 200:
+            if self.results.get('https_8080_status') == 200:
+                base_url = f"https://{self.target}:8080"
+            elif self.results.get('http_8080_status') == 200:
+                base_url = f"http://{self.target}:8080"
+            elif self.results.get('https_status') == 200:
                 base_url = f"https://{self.target}"
             elif self.results.get('http_status') == 200:
                 base_url = f"http://{self.target}"
@@ -1295,6 +1342,10 @@ class WebScanner:
             print("✅ HTTP接続: 成功")
         if self.results.get('https_status') == 200:
             print("✅ HTTPS接続: 成功")
+        if self.results.get('http_8080_status') == 200:
+            print("✅ HTTP接続 (ポート8080): 成功")
+        if self.results.get('https_8080_status') == 200:
+            print("✅ HTTPS接続 (ポート8080): 成功")
         
         # 技術スタック検出
         print("🛠️  技術スタック検出中...")
