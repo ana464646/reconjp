@@ -185,19 +185,36 @@ class NetworkScanner:
                 
                 print(f"   📋 ファイル一覧を取得中...")
                 
-                # タイムアウト付きでファイル一覧を取得
+                # ファイル一覧を取得（timeoutパラメータなし）
                 try:
-                    ftp.retrlines('LIST', lambda x: files.append(x), timeout=30)
+                    ftp.retrlines('LIST', lambda x: files.append(x))
                 except Exception as list_error:
                     print(f"   ⚠️  ファイル一覧取得エラー: {str(list_error)}")
-                    # 部分的な情報でも表示
-                    return {
-                        'files': [],
-                        'directories': [],
-                        'total_files': 0,
-                        'total_directories': 0,
-                        'error': f"ファイル一覧取得に失敗: {str(list_error)}"
-                    }
+                    
+                    # 代替方法: NLSTコマンドを試行
+                    try:
+                        print(f"   🔄 代替方法でファイル一覧を取得中...")
+                        files = ftp.nlst()
+                        # NLSTの結果をLIST形式に変換
+                        converted_files = []
+                        for filename in files:
+                            try:
+                                # 簡易的なファイル情報を生成
+                                converted_files.append(f"-rw-r--r-- 1 user group 0 Jan 1 00:00 {filename}")
+                            except:
+                                continue
+                        files = converted_files
+                        print(f"   ✅ 代替方法で{len(files)}個のエントリを取得")
+                    except Exception as nlst_error:
+                        print(f"   ❌ 代替方法も失敗: {str(nlst_error)}")
+                        # 部分的な情報でも表示
+                        return {
+                            'files': [],
+                            'directories': [],
+                            'total_files': 0,
+                            'total_directories': 0,
+                            'error': f"ファイル一覧取得に失敗: {str(list_error)}"
+                        }
                 
                 print(f"   ✅ {len(files)}個のエントリを取得")
                 
