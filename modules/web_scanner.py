@@ -465,6 +465,218 @@ class WebScanner:
         
         return found_directories
     
+    def directory_enumeration_port_8080(self):
+        """ポート8080専用のディレクトリ列挙"""
+        # ポート8080でアクセス可能なプロトコルを決定
+        if self.results.get('https_8080_status') == 200:
+            base_url = f"https://{self.target}:8080"
+        elif self.results.get('http_8080_status') == 200:
+            base_url = f"http://{self.target}:8080"
+        else:
+            return []
+        
+        found_directories = []
+        hidden_directories = []
+        
+        # ポート8080でよく見られるディレクトリ（Tomcat、Jenkins、その他のWebアプリケーション）
+        port_8080_directories = [
+            # Tomcat関連
+            'manager', 'manager/html', 'manager/status', 'manager/text', 'manager/jmxproxy',
+            'host-manager', 'host-manager/html', 'host-manager/text',
+            'tomcat', 'tomcat-manager', 'tomcat-manager/html',
+            'webapps', 'examples', 'docs', 'ROOT',
+            'manager-gui', 'manager-script', 'manager-jmx', 'manager-status',
+            'host-manager-gui', 'host-manager-script',
+            
+            # Jenkins関連
+            'jenkins', 'jenkins/script', 'jenkins/api', 'jenkins/computer',
+            'jenkins/job', 'jenkins/view', 'jenkins/user', 'jenkins/credentials',
+            'jenkins/pluginManager', 'jenkins/configure', 'jenkins/manage',
+            
+            # その他のWebアプリケーション
+            'admin', 'administrator', 'login', 'auth', 'secure',
+            'private', 'internal', 'management', 'control',
+            'panel', 'dashboard', 'console', 'webadmin',
+            'siteadmin', 'cpanel', 'whm', 'plesk', 'directadmin',
+            'webmin', 'phpmyadmin', 'mysql', 'database',
+            'backup', 'config', 'setup', 'install',
+            'maintenance', 'monitor', 'status', 'health',
+            'logs', 'debug', 'test', 'dev', 'staging',
+            
+            # 一般的なディレクトリ
+            'api', 'rest', 'soap', 'xmlrpc', 'json',
+            'static', 'public', 'private', 'internal', 'external',
+            'upload', 'uploads', 'files', 'file', 'media', 'assets',
+            'css', 'js', 'javascript', 'images', 'img', 'pics', 'photos',
+            'doc', 'docs', 'documentation', 'help', 'support', 'faq',
+            'about', 'contact', 'info', 'information', 'news', 'blog',
+            'forum', 'forums', 'board', 'boards', 'chat', 'irc',
+            'mail', 'email', 'webmail', 'smtp', 'pop', 'imap',
+            'ftp', 'ssh', 'telnet', 'remote', 'vpn', 'ssl',
+            'cert', 'certs', 'certificate', 'certificates', 'ca',
+            'user', 'users', 'member', 'members', 'profile', 'profiles',
+            'settings', 'configuration', 'preferences', 'options',
+            'account', 'accounts', 'billing', 'payment', 'order', 'orders',
+            'cart', 'checkout', 'shopping', 'store', 'shop', 'ecommerce',
+            'cms', 'content', 'pages', 'posts', 'articles', 'news',
+            'gallery', 'portfolio', 'projects', 'services', 'products',
+            'search', 'find', 'lookup', 'query', 'filter',
+            'calendar', 'schedule', 'events', 'booking', 'reservation',
+            'report', 'reports', 'analytics', 'statistics', 'stats',
+            'export', 'import', 'sync', 'backup', 'restore',
+            'cache', 'temp', 'tmp', 'session', 'sessions',
+            'error', 'errors', '404', '403', '500', '502', '503',
+            'maintenance', 'maintain', 'repair', 'fix', 'debug',
+            'upgrade', 'update', 'patch', 'hotfix', 'bugfix',
+            'version', 'release', 'beta', 'alpha', 'preview',
+            'demo', 'sandbox', 'playground', 'lab', 'labs',
+            'test', 'testing', 'dev', 'development', 'staging', 'production',
+            'tools', 'utilities', 'scripts', 'cgi', 'cgi-bin',
+            'bin', 'sbin', 'usr', 'etc', 'var', 'home', 'root',
+            'windows', 'win', 'system', 'system32', 'sys', 'sys32',
+            'program', 'programs', 'app', 'apps', 'application', 'applications',
+            'web', 'www', 'wwwroot', 'htdocs', 'public_html', 'html',
+            'css', 'js', 'javascript', 'images', 'img', 'pics', 'photos',
+            'doc', 'docs', 'documentation', 'help', 'support', 'faq',
+            'about', 'contact', 'info', 'information', 'news', 'blog',
+            'forum', 'forums', 'board', 'boards', 'chat', 'irc',
+            'mail', 'email', 'webmail', 'smtp', 'pop', 'imap',
+            'ftp', 'ssh', 'telnet', 'remote', 'vpn', 'ssl',
+            'cert', 'certs', 'certificate', 'certificates', 'ca',
+            'auth', 'authentication', 'login', 'logout', 'signin', 'signout',
+            'register', 'registration', 'signup', 'account', 'accounts',
+            'user', 'users', 'member', 'members', 'profile', 'profiles',
+            'settings', 'config', 'configuration', 'setup', 'install',
+            'installer', 'installation', 'upgrade', 'update', 'patch',
+            'maintenance', 'maintain', 'repair', 'fix', 'debug',
+            'error', 'errors', '404', '403', '500', '502', '503',
+            'status', 'health', 'monitor', 'monitoring', 'stats', 'statistics',
+            'analytics', 'tracking', 'track', 'log', 'logs', 'logging',
+            'audit', 'auditing', 'security', 'secure', 'protect', 'protection',
+            'firewall', 'waf', 'ids', 'ips', 'honeypot', 'trap',
+            'admin1', 'admin2', 'admin3', 'administrator1', 'administrator2',
+            'manager', 'management', 'supervisor', 'super', 'master',
+            'root1', 'root2', 'system1', 'system2', 'webmaster1', 'webmaster2',
+            'test1', 'test2', 'test3', 'dev1', 'dev2', 'dev3',
+            'staging1', 'staging2', 'beta1', 'beta2', 'alpha1', 'alpha2',
+            'demo1', 'demo2', 'sandbox1', 'sandbox2', 'lab1', 'lab2',
+            'hidden1', 'hidden2', 'secret1', 'secret2', 'private1', 'private2',
+            'internal1', 'internal2', 'secure1', 'secure2', 'protected1', 'protected2',
+            'admin-panel1', 'admin-panel2', 'dashboard1', 'dashboard2', 'panel1', 'panel2',
+            'portal1', 'portal2', 'console1', 'console2', 'webadmin1', 'webadmin2',
+            'siteadmin1', 'siteadmin2', 'cpanel1', 'cpanel2', 'whm1', 'whm2',
+            'plesk1', 'plesk2', 'directadmin1', 'directadmin2', 'webmin1', 'webmin2',
+            'phpmyadmin1', 'phpmyadmin2', 'mysql1', 'mysql2', 'database1', 'database2',
+            'backup1', 'backup2', 'backup3', 'bak1', 'bak2', 'bak3',
+            'old1', 'old2', 'old3', 'archive1', 'archive2', 'archive3',
+            'temp1', 'temp2', 'tmp1', 'tmp2', 'cache1', 'cache2',
+            'upload1', 'upload2', 'files1', 'files2', 'media1', 'media2',
+            'api1', 'api2', 'api3', 'rest1', 'rest2', 'soap1', 'soap2',
+            'test1', 'test2', 'test3', 'dev1', 'dev2', 'dev3',
+            'tools1', 'tools2', 'utilities1', 'utilities2', 'scripts1', 'scripts2',
+            'web1', 'web2', 'www1', 'www2', 'html1', 'html2',
+            'css1', 'css2', 'js1', 'js2', 'images1', 'images2',
+            'docs1', 'docs2', 'help1', 'help2', 'support1', 'support2',
+            'about1', 'about2', 'contact1', 'contact2', 'info1', 'info2',
+            'news1', 'news2', 'blog1', 'blog2', 'forum1', 'forum2',
+            'mail1', 'mail2', 'email1', 'email2', 'webmail1', 'webmail2',
+            'auth1', 'auth2', 'login1', 'login2', 'signin1', 'signin2',
+            'register1', 'register2', 'signup1', 'signup2', 'account1', 'account2',
+            'user1', 'user2', 'member1', 'member2', 'profile1', 'profile2',
+            'settings1', 'settings2', 'config1', 'config2', 'setup1', 'setup2',
+            'install1', 'install2', 'installer1', 'installer2', 'upgrade1', 'upgrade2',
+            'maintenance1', 'maintenance2', 'repair1', 'repair2', 'fix1', 'fix2',
+            'error1', 'error2', 'status1', 'status2', 'health1', 'health2',
+            'monitor1', 'monitor2', 'stats1', 'stats2', 'analytics1', 'analytics2',
+            'log1', 'log2', 'audit1', 'audit2', 'security1', 'security2',
+            'firewall1', 'firewall2', 'waf1', 'waf2', 'ids1', 'ids2',
+            'honeypot1', 'honeypot2', 'trap1', 'trap2'
+        ]
+        
+        def check_directory(dir_name):
+            try:
+                url = f"{base_url}/{dir_name}"
+                
+                # タイムアウト設定を調整
+                response = requests.get(
+                    url, 
+                    headers=self.headers, 
+                    timeout=(3, 10),  # 接続タイムアウト3秒、読み取りタイムアウト10秒
+                    verify=False,
+                    allow_redirects=True,
+                    max_retries=1
+                )
+                
+                if response.status_code in [200, 301, 302, 403]:
+                    result = {
+                        'name': dir_name,
+                        'url': url,
+                        'status': response.status_code,
+                        'size': len(response.content),
+                        'title': self.extract_title(response.text),
+                        'server': response.headers.get('Server', 'Unknown'),
+                        'content_type': response.headers.get('Content-Type', 'Unknown')
+                    }
+                    
+                    # 隠しディレクトリかどうかを判定
+                    hidden_keywords = ['hidden', 'secret', 'private', 'internal', 'secure', 'admin', 'simple', 'manager', 'host-manager']
+                    if any(keyword in dir_name.lower() for keyword in hidden_keywords):
+                        result['hidden'] = True
+                        hidden_directories.append(result)
+                        print(f"🔍 ポート8080隠しディレクトリ発見: {dir_name} (ステータス: {response.status_code}) - {result['title']}")
+                        print(f"   🔗 URL: {url}")
+                    else:
+                        result['hidden'] = False
+                        print(f"📁 ポート8080ディレクトリ発見: {dir_name} (ステータス: {response.status_code})")
+                    
+                    return result
+                return None
+                
+            except requests.exceptions.ConnectTimeout:
+                # 接続タイムアウトの場合は静かにスキップ
+                return None
+            except requests.exceptions.ReadTimeout:
+                # 読み取りタイムアウトの場合は静かにスキップ
+                return None
+            except requests.exceptions.ConnectionError:
+                # 接続エラーの場合は静かにスキップ
+                return None
+            except Exception as e:
+                # すべてのエラーを静かにスキップ
+                return None
+        
+        print(f"🔍 ポート8080ディレクトリ列挙を開始: {base_url}")
+        print(f"📋 検索対象: {len(port_8080_directories)}個のディレクトリ")
+        
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            future_to_dir = {executor.submit(check_directory, dir_name): dir_name for dir_name in port_8080_directories}
+            
+            for future in as_completed(future_to_dir):
+                result = future.result()
+                if result:
+                    found_directories.append(result)
+        
+        # 結果の整理
+        self.results['port_8080_directories'] = found_directories
+        self.results['port_8080_hidden_directories'] = hidden_directories
+        
+        # 結果サマリー
+        print(f"\n📊 ポート8080ディレクトリ列挙結果:")
+        print(f"   📁 総ディレクトリ数: {len(found_directories)}個")
+        print(f"   🔍 隠しディレクトリ数: {len(hidden_directories)}個")
+        
+        if hidden_directories:
+            print(f"\n⚠️  ポート8080で発見された隠しディレクトリ:")
+            for hidden_dir in hidden_directories:
+                status_emoji = {"200": "✅", "301": "🔄", "302": "🔄", "403": "🚫"}.get(str(hidden_dir['status']), "❓")
+                print(f"   {status_emoji} /{hidden_dir['name']} - {hidden_dir['title']}")
+                print(f"     📄 サイズ: {hidden_dir['size']} bytes")
+                print(f"     🖥️  サーバー: {hidden_dir['server']}")
+                print(f"     📋 タイプ: {hidden_dir['content_type']}")
+                print(f"     🔗 URL: {hidden_dir['url']}")
+        
+        return found_directories
+    
     def file_enumeration(self, base_url=None):
         """ファイル列挙"""
         if base_url is None:
@@ -1289,6 +1501,90 @@ class WebScanner:
         
         return auth_found
     
+    def scan_basic_auth_directories_port_8080(self):
+        """ポート8080でのBasic認証が必要なディレクトリのスキャン"""
+        # ポート8080でアクセス可能なプロトコルを決定
+        if self.results.get('https_8080_status') == 200:
+            base_url = f"https://{self.target}:8080"
+        elif self.results.get('http_8080_status') == 200:
+            base_url = f"http://{self.target}:8080"
+        else:
+            return []
+        
+        print(f"🔍 ポート8080 Basic認証ディレクトリをスキャン中: {base_url}")
+        
+        # ポート8080でBasic認証が必要な可能性が高いディレクトリ
+        auth_directories = [
+            # Tomcat関連
+            'manager', 'manager/html', 'manager/status', 'manager/text', 'manager/jmxproxy',
+            'host-manager', 'host-manager/html', 'host-manager/text',
+            'tomcat', 'tomcat-manager', 'tomcat-manager/html',
+            'manager-gui', 'manager-script', 'manager-jmx', 'manager-status',
+            'host-manager-gui', 'host-manager-script',
+            
+            # Jenkins関連
+            'jenkins', 'jenkins/script', 'jenkins/api', 'jenkins/computer',
+            'jenkins/job', 'jenkins/view', 'jenkins/user', 'jenkins/credentials',
+            'jenkins/pluginManager', 'jenkins/configure', 'jenkins/manage',
+            
+            # その他のWebアプリケーション
+            'admin', 'administrator', 'login', 'auth', 'secure',
+            'private', 'internal', 'management', 'control',
+            'panel', 'dashboard', 'console', 'webadmin',
+            'siteadmin', 'cpanel', 'whm', 'plesk', 'directadmin',
+            'webmin', 'phpmyadmin', 'mysql', 'database',
+            'backup', 'config', 'setup', 'install',
+            'maintenance', 'monitor', 'status', 'health',
+            'logs', 'debug', 'test', 'dev', 'staging'
+        ]
+        
+        auth_found = []
+        
+        def check_auth_directory(dir_name):
+            try:
+                url = f"{base_url}/{dir_name}"
+                has_auth, auth_header = self.detect_basic_auth(url)
+                
+                if has_auth:
+                    result = {
+                        'directory': dir_name,
+                        'url': url,
+                        'auth_header': auth_header,
+                        'realm': self.extract_realm(auth_header)
+                    }
+                    auth_found.append(result)
+                    print(f"🔐 ポート8080 Basic認証発見: /{dir_name}")
+                    print(f"   🔗 URL: {url}")
+                    if result['realm']:
+                        print(f"   🏷️  Realm: {result['realm']}")
+                    
+                    # ブルートフォース攻撃を実行
+                    auth_results = self.basic_auth_bruteforce(url, result['realm'])
+                    result['bruteforce_results'] = auth_results
+                    
+                    return result
+                return None
+            except Exception as e:
+                # すべてのエラーを静かにスキップ
+                return None
+        
+        print(f"   📋 スキャン対象: {len(auth_directories)}個のディレクトリ")
+        
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            future_to_dir = {executor.submit(check_auth_directory, dir_name): dir_name for dir_name in auth_directories}
+            
+            for future in as_completed(future_to_dir):
+                result = future.result()
+                if result:
+                    auth_found.append(result)
+        
+        self.results['port_8080_auth_results'] = {
+            'auth_directories': auth_found,
+            'total_found': len(auth_found)
+        }
+        
+        return auth_found
+    
     def extract_realm(self, auth_header):
         """WWW-Authenticateヘッダーからrealmを抽出"""
         try:
@@ -1376,6 +1672,27 @@ class WebScanner:
         else:
             print("ℹ️  検出されたディレクトリはありません")
         
+        # ポート8080でのディレクトリ列挙（追加）
+        if self.results.get('http_8080_status') == 200 or self.results.get('https_8080_status') == 200:
+            print("\n🔍 ポート8080でのディレクトリ列挙中...")
+            port_8080_directories = self.directory_enumeration_port_8080()
+            if port_8080_directories:
+                print(f"✅ ポート8080で検出されたディレクトリ: {len(port_8080_directories)}個")
+                
+                # ポート8080の隠しディレクトリの詳細表示
+                port_8080_hidden_dirs = [d for d in port_8080_directories if d.get('hidden', False)]
+                if port_8080_hidden_dirs:
+                    print(f"🔍 ポート8080の隠しディレクトリの詳細:")
+                    for hidden_dir in port_8080_hidden_dirs:
+                        status_emoji = {"200": "✅", "301": "🔄", "302": "🔄", "403": "🚫"}.get(str(hidden_dir['status']), "❓")
+                        print(f"   {status_emoji} /{hidden_dir['name']} - {hidden_dir['title']}")
+                        print(f"     📄 サイズ: {hidden_dir['size']} bytes")
+                        print(f"     🖥️  サーバー: {hidden_dir['server']}")
+                        print(f"     📋 タイプ: {hidden_dir['content_type']}")
+                        print(f"     🔗 URL: {hidden_dir['url']}")
+            else:
+                print("ℹ️  ポート8080で検出されたディレクトリはありません")
+        
         # ファイル列挙
         print("📄 ファイル列挙中...")
         files = self.file_enumeration()
@@ -1443,6 +1760,22 @@ class WebScanner:
                         print(f"         - {login['username']}:{login['password']}")
         else:
             print("ℹ️  Basic認証が必要なディレクトリは見つかりませんでした")
+        
+        # ポート8080でのBasic認証スキャン（追加）
+        if self.results.get('http_8080_status') == 200 or self.results.get('https_8080_status') == 200:
+            print("\n🔐 ポート8080でのBasic認証スキャン中...")
+            port_8080_auth_results = self.scan_basic_auth_directories_port_8080()
+            if port_8080_auth_results:
+                print(f"🔐 ポート8080でBasic認証が必要なディレクトリ: {len(port_8080_auth_results)}個")
+                for auth_dir in port_8080_auth_results:
+                    print(f"   🔐 /{auth_dir['directory']} - {auth_dir['url']}")
+                    if auth_dir.get('bruteforce_results', {}).get('successful_logins'):
+                        successful_logins = auth_dir['bruteforce_results']['successful_logins']
+                        print(f"      ✅ 成功した認証情報: {len(successful_logins)}個")
+                        for login in successful_logins:
+                            print(f"         - {login['username']}:{login['password']}")
+            else:
+                print("ℹ️  ポート8080でBasic認証が必要なディレクトリは見つかりませんでした")
         
         self.results['vulnerabilities'] = all_vulnerabilities
         
