@@ -27,6 +27,372 @@ def print_banner():
     """
     print(banner)
 
+def print_help():
+    """詳細なヘルプ画面を表示"""
+    help_text = """
+╔══════════════════════════════════════════════════════════════╗
+║                    ReconJP - ヘルプ画面                      ║
+╚══════════════════════════════════════════════════════════════╝
+
+🎯 【基本使用方法】
+  python cli.py <ターゲット> [オプション]
+
+📋 【主要コマンド】
+  1. 完全な偵察:
+     python cli.py example.com
+
+  2. 特定の偵察のみ:
+     python cli.py example.com --network-only    # ネットワーク偵察
+     python cli.py example.com --web-only        # Webアプリケーション偵察
+     python cli.py example.com --osint-only      # OSINT情報収集
+
+  3. ペイロード生成:
+     python cli.py example.com --payload --lhost 192.168.1.100
+
+🔧 【ネットワーク偵察機能】
+  • ポートスキャン (TCP/UDP)
+  • サービス検出 (FTP, SSH, Telnet, HTTP, HTTPS等)
+  • OS検出
+  • 認証テスト (匿名ログイン、デフォルト認証情報)
+
+🌐 【Webアプリケーション偵察機能】
+  • ディレクトリ探索 (隠しディレクトリ含む)
+  • 技術スタック検出 (CMS, フレームワーク, サーバー)
+  • サブドメイン列挙
+  • 脆弱性スキャン (XSS, SQLインジェクション, ディレクトリトラバーサル等)
+  • ファイル検出
+
+📊 【OSINT情報収集機能】
+  • WHOIS情報取得
+  • DNSレコード取得 (A, AAAA, MX, TXT, NS等)
+  • サブドメイン列挙
+  • メールアドレス収集
+  • SSL証明書情報
+
+🔧 【ペイロード生成機能】
+  • よくあるペイロードの一括生成
+  • カスタムペイロード生成
+  • 複数プラットフォーム対応 (Windows, Linux, Web)
+  • エンコーダー対応
+  • リスナーコマンド自動生成
+
+📁 【出力ファイル】
+  • 日本語レポート (recon_<target>_<timestamp>.txt)
+  • ペイロードファイル (payloads/ディレクトリ)
+  • 詳細なセキュリティ評価と推奨事項
+
+⚙️ 【主要オプション】
+  -o, --output DIR        出力ディレクトリを指定 (デフォルト: recon_results)
+  --verbose, -v           詳細な出力を有効にする
+  --quiet, -q             出力を最小限にする
+  --help, -h              このヘルプ画面を表示
+
+📚 【詳細ヘルプ】
+  --help-network          ネットワーク偵察の詳細ヘルプを表示
+  --help-web              Webアプリケーション偵察の詳細ヘルプを表示
+  --help-osint            OSINT情報収集の詳細ヘルプを表示
+  --help-payload          ペイロード生成の詳細ヘルプを表示
+
+🔧 【ペイロード生成オプション】
+  --lhost IP              リスナーのIPアドレス (必須)
+  --lport PORT            リスナーのポート (デフォルト: 4444)
+  --platform PLATFORM     プラットフォーム (windows/linux/web)
+  --payload-type TYPE     ペイロードタイプ (reverse_shell/meterpreter/bind_shell)
+  --custom-payload NAME   カスタムペイロード名
+  --output-format FORMAT  出力形式 (raw/exe/elf/php/jsp/asp)
+  --encoder ENCODER       エンコーダー名
+  --iterations NUM        エンコーダーの繰り返し回数
+  --list-payloads         利用可能なペイロードを一覧表示
+
+📝 【使用例】
+  1. 基本的な偵察:
+     python cli.py example.com
+
+  2. ネットワーク偵察のみ:
+     python cli.py example.com --network-only
+
+  3. カスタム出力ディレクトリ:
+     python cli.py example.com -o ./my_results
+
+  4. ペイロード一括生成:
+     python cli.py example.com --payload --lhost 192.168.1.100
+
+  5. 特定のペイロード生成:
+     python cli.py example.com --payload --platform windows --payload-type meterpreter --lhost 192.168.1.100
+
+  6. カスタムペイロード生成:
+     python cli.py example.com --payload --custom-payload windows/meterpreter/reverse_tcp --lhost 192.168.1.100
+
+⚠️ 【注意事項】
+  • このツールは教育目的で作成されています
+  • 実際のセキュリティ評価には専門家の判断が必要です
+  • ターゲットの許可を得てから使用してください
+  • 法律に従って適切に使用してください
+
+📞 【サポート】
+  • GitHub: https://github.com/yourusername/reconjp
+  • ドキュメント: README.md
+
+╔══════════════════════════════════════════════════════════════╗
+║                    ヘルプ画面終了                            ║
+╚══════════════════════════════════════════════════════════════╝
+    """
+    print(help_text)
+
+def print_network_help():
+    """ネットワーク偵察の詳細ヘルプを表示"""
+    help_text = """
+╔══════════════════════════════════════════════════════════════╗
+║                ネットワーク偵察 - 詳細ヘルプ                  ║
+╚══════════════════════════════════════════════════════════════╝
+
+🔧 【ネットワーク偵察機能の詳細】
+
+📡 【ポートスキャン】
+  • TCP SYN スキャン (高速)
+  • TCP Connect スキャン (確実)
+  • UDP スキャン (時間がかかる)
+  • よく使われるポート (21, 22, 23, 25, 53, 80, 110, 143, 443, 993, 995, 3306, 3389, 5432, 8080等)
+
+🔍 【サービス検出】
+  • FTP (21) - ファイル転送プロトコル
+  • SSH (22) - セキュアシェル
+  • Telnet (23) - リモートログイン
+  • SMTP (25) - メール送信
+  • DNS (53) - ドメインネームシステム
+  • HTTP (80) - Webサーバー
+  • HTTPS (443) - セキュアWebサーバー
+  • MySQL (3306) - データベース
+  • RDP (3389) - リモートデスクトップ
+  • PostgreSQL (5432) - データベース
+
+💻 【OS検出】
+  • TCP/IPスタックフィンガープリンティング
+  • 応答時間とTTL値の分析
+  • サポートされているオプションの検出
+
+🔐 【認証テスト】
+  • 匿名ログインのテスト
+  • デフォルト認証情報のテスト
+  • よく使われるユーザー名/パスワードの組み合わせ
+
+📊 【出力情報】
+  • 開いているポートの一覧
+  • 各ポートで動作しているサービス
+  • サービスのバージョン情報
+  • OS情報
+  • 認証テスト結果
+
+⚠️ 【注意事項】
+  • ポートスキャンは時間がかかる場合があります
+  • ファイアウォールによってブロックされる可能性があります
+  • 管理者権限が必要な場合があります
+
+📝 【使用例】
+  python cli.py example.com --network-only
+  python cli.py 192.168.1.1 --network-only --verbose
+    """
+    print(help_text)
+
+def print_web_help():
+    """Webアプリケーション偵察の詳細ヘルプを表示"""
+    help_text = """
+╔══════════════════════════════════════════════════════════════╗
+║              Webアプリケーション偵察 - 詳細ヘルプ             ║
+╚══════════════════════════════════════════════════════════════╝
+
+🌐 【Webアプリケーション偵察機能の詳細】
+
+📁 【ディレクトリ探索】
+  • 一般的なディレクトリの探索
+  • 隠しディレクトリの探索 (.htaccess, .git, .env等)
+  • 管理画面の探索 (admin, wp-admin, phpmyadmin等)
+  • バックアップファイルの探索 (.bak, .old, .backup等)
+
+🛠️ 【技術スタック検出】
+  • Webサーバー (Apache, Nginx, IIS等)
+  • プログラミング言語 (PHP, Python, Node.js等)
+  • フレームワーク (WordPress, Drupal, Laravel等)
+  • データベース (MySQL, PostgreSQL, MongoDB等)
+  • フロントエンド (jQuery, Bootstrap, React等)
+
+🔗 【サブドメイン列挙】
+  • DNSレコードからの検出
+  • 一般的なサブドメイン名の試行
+  • ワイルドカードDNSの検出
+  • サブドメインの有効性確認
+
+⚠️ 【脆弱性スキャン】
+  • XSS (クロスサイトスクリプティング)
+  • SQLインジェクション
+  • ディレクトリトラバーサル
+  • ファイルインクルージョン
+  • コマンドインジェクション
+  • 情報漏洩 (エラーメッセージ、デバッグ情報)
+
+📄 【ファイル検出】
+  • ロボットファイル (robots.txt)
+  • サイトマップ (sitemap.xml)
+  • 設定ファイル (.env, config.php等)
+  • ログファイル (access.log, error.log等)
+
+📊 【出力情報】
+  • HTTP/HTTPSステータス
+  • 検出されたディレクトリとファイル
+  • 技術スタック情報
+  • サブドメイン一覧
+  • 脆弱性レポート
+  • セキュリティヘッダー情報
+
+⚠️ 【注意事項】
+  • 大量のリクエストを送信するため、サーバーに負荷がかかる可能性があります
+  • レート制限に引っかかる可能性があります
+  • 一部の機能は時間がかかる場合があります
+
+📝 【使用例】
+  python cli.py example.com --web-only
+  python cli.py example.com --web-only --verbose
+    """
+    print(help_text)
+
+def print_osint_help():
+    """OSINT情報収集の詳細ヘルプを表示"""
+    help_text = """
+╔══════════════════════════════════════════════════════════════╗
+║                 OSINT情報収集 - 詳細ヘルプ                   ║
+╚══════════════════════════════════════════════════════════════╝
+
+📊 【OSINT情報収集機能の詳細】
+
+🏢 【WHOIS情報】
+  • ドメイン登録者情報
+  • レジストラ情報
+  • 作成日・更新日・有効期限
+  • ネームサーバー情報
+  • 管理者連絡先情報
+
+🌐 【DNSレコード】
+  • A レコード (IPv4アドレス)
+  • AAAA レコード (IPv6アドレス)
+  • MX レコード (メールサーバー)
+  • TXT レコード (SPF, DKIM等)
+  • NS レコード (ネームサーバー)
+  • CNAME レコード (エイリアス)
+  • PTR レコード (逆引き)
+
+🔗 【サブドメイン列挙】
+  • 一般的なサブドメイン名の試行
+  • DNSレコードからの検出
+  • ワイルドカードDNSの検出
+  • サブドメインの有効性確認
+  • 逆引きDNS検索
+
+📧 【メールアドレス収集】
+  • WHOIS情報からの抽出
+  • Webサイトからの抽出
+  • ソーシャルメディアからの抽出
+  • 公開データベースからの検索
+
+🔒 【SSL証明書情報】
+  • 証明書の有効期限
+  • 発行者情報
+  • サブジェクト代替名 (SAN)
+  • 暗号化アルゴリズム
+  • 証明書チェーン
+
+📊 【出力情報】
+  • WHOIS詳細情報
+  • DNSレコード一覧
+  • サブドメイン一覧
+  • メールアドレス一覧
+  • SSL証明書情報
+  • セキュリティ評価
+
+⚠️ 【注意事項】
+  • 一部の情報は公開されていない場合があります
+  • レート制限に引っかかる可能性があります
+  • プライバシー保護のため一部情報が隠されている場合があります
+
+📝 【使用例】
+  python cli.py example.com --osint-only
+  python cli.py example.com --osint-only --verbose
+    """
+    print(help_text)
+
+def print_payload_help():
+    """ペイロード生成の詳細ヘルプを表示"""
+    help_text = """
+╔══════════════════════════════════════════════════════════════╗
+║                 ペイロード生成 - 詳細ヘルプ                  ║
+╚══════════════════════════════════════════════════════════════╝
+
+🔧 【ペイロード生成機能の詳細】
+
+💻 【対応プラットフォーム】
+  • Windows (exe, dll, ps1)
+  • Linux (elf, sh)
+  • Web (php, jsp, asp, aspx)
+
+🎯 【ペイロードタイプ】
+  • reverse_shell - リバースシェル
+  • meterpreter - Metasploit Meterpreter
+  • bind_shell - バインドシェル
+  • custom - カスタムペイロード
+
+🔧 【出力形式】
+  • raw - 生のペイロード
+  • exe - Windows実行ファイル
+  • elf - Linux実行ファイル
+  • php - PHPスクリプト
+  • jsp - JSPスクリプト
+  • asp - ASPスクリプト
+
+🔐 【エンコーダー】
+  • x86/shikata_ga_nai - 多段階エンコーダー
+  • x86/xor - XORエンコーダー
+  • x86/alpha_mixed - アルファベットエンコーダー
+  • x86/countdown - カウントダウンエンコーダー
+
+📋 【よくあるペイロード】
+  • Windows Reverse TCP Shell
+  • Windows Meterpreter Reverse TCP
+  • Linux Reverse TCP Shell
+  • Web Shell (PHP, JSP, ASP)
+  • PowerShell Reverse Shell
+
+🎧 【リスナーコマンド】
+  • Netcat リスナー
+  • Metasploit リスナー
+  • PowerShell リスナー
+  • Python リスナー
+
+📊 【出力情報】
+  • 生成されたペイロードファイル
+  • ペイロードの詳細情報
+  • リスナーコマンド
+  • 使用方法の説明
+
+⚠️ 【注意事項】
+  • msfvenomが必要です (Metasploit Framework)
+  • ペイロードは教育目的でのみ使用してください
+  • 実際の攻撃には使用しないでください
+  • 法律に従って適切に使用してください
+
+📝 【使用例】
+  # よくあるペイロードの一括生成
+  python cli.py example.com --payload --lhost 192.168.1.100
+
+  # 特定のペイロード生成
+  python cli.py example.com --payload --platform windows --payload-type meterpreter --lhost 192.168.1.100
+
+  # カスタムペイロード生成
+  python cli.py example.com --payload --custom-payload windows/meterpreter/reverse_tcp --lhost 192.168.1.100
+
+  # ペイロード一覧表示
+  python cli.py example.com --payload --list-payloads
+    """
+    print(help_text)
+
 def save_results(results, target, output_dir):
     """結果をファイルに保存"""
     os.makedirs(output_dir, exist_ok=True)
@@ -241,7 +607,6 @@ def save_results(results, target, output_dir):
         f.write("   - 定期的なセキュリティ監査の実施を推奨します\n\n")
         
         f.write("=" * 80 + "\n")
-        f.write("📧 お問い合わせ: info@reconjp.com\n")
         f.write("🌐 公式サイト: https://github.com/yourusername/reconjp\n")
         f.write("=" * 80 + "\n")
     
@@ -511,6 +876,7 @@ def main():
     parser = argparse.ArgumentParser(
         description='ReconJP - ペネトレーションテスト用偵察ツール',
         formatter_class=argparse.RawDescriptionHelpFormatter,
+        add_help=False,  # カスタムヘルプを使用するため無効化
         epilog="""
 使用例:
   python cli.py example.com                    # 完全な偵察
@@ -525,7 +891,16 @@ def main():
         """
     )
     
-    parser.add_argument('target', help='ターゲットドメインまたはIPアドレス')
+    # カスタムヘルプオプションを追加
+    parser.add_argument('--help', '-h', action='store_true', help='詳細なヘルプ画面を表示')
+    
+    # 各機能の詳細ヘルプオプション
+    parser.add_argument('--help-network', action='store_true', help='ネットワーク偵察の詳細ヘルプを表示')
+    parser.add_argument('--help-web', action='store_true', help='Webアプリケーション偵察の詳細ヘルプを表示')
+    parser.add_argument('--help-osint', action='store_true', help='OSINT情報収集の詳細ヘルプを表示')
+    parser.add_argument('--help-payload', action='store_true', help='ペイロード生成の詳細ヘルプを表示')
+    
+    parser.add_argument('target', nargs='?', help='ターゲットドメインまたはIPアドレス')
     parser.add_argument('-o', '--output', default='recon_results', 
                        help='出力ディレクトリ (デフォルト: recon_results)')
     
@@ -561,6 +936,39 @@ def main():
     parser.add_argument('--list-payloads', action='store_true', help='利用可能なペイロードを一覧表示')
     
     args = parser.parse_args()
+    
+    # ヘルプ画面の表示
+    if args.help:
+        print_banner()
+        print_help()
+        sys.exit(0)
+    
+    # 各機能の詳細ヘルプ表示
+    if args.help_network:
+        print_banner()
+        print_network_help()
+        sys.exit(0)
+    
+    if args.help_web:
+        print_banner()
+        print_web_help()
+        sys.exit(0)
+    
+    if args.help_osint:
+        print_banner()
+        print_osint_help()
+        sys.exit(0)
+    
+    if args.help_payload:
+        print_banner()
+        print_payload_help()
+        sys.exit(0)
+    
+    # ターゲットが指定されていない場合はヘルプを表示
+    if not args.target:
+        print_banner()
+        print_help()
+        sys.exit(0)
     
     # バナー表示
     if not args.quiet:
